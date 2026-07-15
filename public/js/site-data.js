@@ -80,11 +80,17 @@ function buildStoragePath(folder, file) {
 async function fetchSiteContent() {
   assertSupabaseConfigured();
 
-  const [activitiesRes, specialtiesRes, interestsRes, settingsRes] = await Promise.all([
+  // careers is queried in the same Promise.all for efficiency, but its error
+  // is deliberately kept OUT of firstError below: the careers table is new
+  // and its SQL patch may not have been run yet on a given project, and a
+  // missing-table error there must never take down activities/specialties/
+  // interests/settings (which is why it's checked separately, not thrown).
+  const [activitiesRes, specialtiesRes, interestsRes, settingsRes, careersRes] = await Promise.all([
     supabaseClient.from('activities').select('*').order('sort_order', { ascending: true }),
     supabaseClient.from('specialties').select('*').order('sort_order', { ascending: true }),
     supabaseClient.from('interests').select('*').order('sort_order', { ascending: true }),
-    supabaseClient.from('settings').select('*')
+    supabaseClient.from('settings').select('*'),
+    supabaseClient.from('careers').select('*').order('start_year', { ascending: false }).order('created_at', { ascending: false })
   ]);
 
   const firstError = activitiesRes.error || specialtiesRes.error || interestsRes.error || settingsRes.error;
@@ -98,8 +104,19 @@ async function fetchSiteContent() {
     specialties: specialtiesRes.data || [],
     interests: interestsRes.data || [],
     settings,
-    settingsRows: settingsRes.data || []
+    settingsRows: settingsRes.data || [],
+    careers: careersRes.data || [],
+    careersError: careersRes.error || null
   };
+}
+
+// "2024 – 현재" / "2022 – 2024" / "2023" — built from start_year/end_year/
+// is_current at render time so the finished sentence is never stored in the
+// database (admins only ever edit the three underlying fields).
+function formatCareerPeriod(career) {
+  if (career.is_current) return career.start_year + ' – 현재';
+  if (career.end_year != null) return career.start_year + ' – ' + career.end_year;
+  return String(career.start_year);
 }
 
 function escHtml(value) {

@@ -316,6 +316,12 @@ body.admin-body {
 
 .field textarea { resize: vertical; }
 
+.field input:disabled {
+  background: #F2F2F2;
+  color: #999999;
+  cursor: not-allowed;
+}
+
 .field-checkbox {
   flex-direction: row;
   align-items: center;

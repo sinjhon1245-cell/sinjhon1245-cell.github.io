@@ -199,11 +199,12 @@ function resetAllForms() {
   exitActivityEditMode();
   exitSpecialtyEditMode();
   exitInterestEditMode();
-  ['activity-form-actions', 'specialty-form-actions', 'interest-form-actions', 'hero-photo-actions', 'about-photo-actions']
+  exitCareerEditMode();
+  ['activity-form-actions', 'specialty-form-actions', 'interest-form-actions', 'career-form-actions', 'hero-photo-actions', 'about-photo-actions']
     .forEach(clearSuccessActions);
-  ['activity-form-message', 'specialty-form-message', 'interest-form-message', 'hero-photo-message', 'about-photo-message']
+  ['activity-form-message', 'specialty-form-message', 'interest-form-message', 'career-form-message', 'hero-photo-message', 'about-photo-message']
     .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
-  currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [] };
+  currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
 }
 
 function setupGate() {
@@ -305,7 +306,7 @@ function isImagePathStillReferenced(path, excludeActivityId) {
 
 // ── Rendering + wiring per collection ──
 
-let currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [] };
+let currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
 
 function activityRowHtml(a) {
   const thumb = a.image_url
@@ -373,13 +374,19 @@ async function loadAll() {
   try {
     currentData = await fetchSiteContent();
   } catch (err) {
-    currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [] };
+    currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
     adminLoadError.textContent = describeSupabaseError(err);
     adminLoadError.style.display = 'block';
   }
   renderList('activities-list', currentData.activities, activityRowHtml, '아직 등록된 활동이 없습니다.');
   renderList('specialties-list-admin', currentData.specialties, specialtyRowHtml, '아직 등록된 전문 분야가 없습니다.');
   renderList('interests-list-admin', currentData.interests, interestRowHtml, '아직 등록된 관심 주제가 없습니다.');
+  if (currentData.careersError) {
+    const careersListEl = document.getElementById('careers-list-admin');
+    if (careersListEl) careersListEl.innerHTML = `<p class="mgmt-empty">${escHtml(describeSupabaseError(currentData.careersError))}</p>`;
+  } else {
+    renderList('careers-list-admin', currentData.careers, careerRowHtml, '아직 등록된 주요 이력이 없습니다.');
+  }
   showPreview('hero-photo-preview', currentData.settings.hero_image_url);
   showPreview('about-photo-preview', currentData.settings.about_portrait_url);
   COPY_GROUPS.forEach((g) => populateCopyForm(g.formId, g.fields, currentData.settings));
@@ -414,8 +421,8 @@ function wireRowButtons() {
         await safeRemoveStoragePath(row.image_path);
       }
 
-      const labels = { activities: '활동 기록이', specialties: '전문 분야가', interests: '관심 주제가' };
-      const messageId = { activities: 'activity-form-message', specialties: 'specialty-form-message', interests: 'interest-form-message' }[table];
+      const labels = { activities: '활동 기록이', specialties: '전문 분야가', interests: '관심 주제가', careers: '주요 이력이' };
+      const messageId = { activities: 'activity-form-message', specialties: 'specialty-form-message', interests: 'interest-form-message', careers: 'career-form-message' }[table];
       const messageEl = document.getElementById(messageId);
       if (messageEl) {
         messageEl.textContent = (labels[table] || '항목이') + ' 삭제되었습니다.';
@@ -435,6 +442,7 @@ function wireRowButtons() {
       if (table === 'activities') enterActivityEditMode(row);
       if (table === 'specialties') enterSpecialtyEditMode(row);
       if (table === 'interests') enterInterestEditMode(row);
+      if (table === 'careers') enterCareerEditMode(row);
     });
   });
 }
@@ -665,6 +673,135 @@ function setupSpecialtyForm() {
   });
 }
 
+// ── 주요 이력 form (add + edit) ──
+//
+// The finished sentence ("2024 – 현재") is never stored — formatCareerPeriod()
+// (site-data.js) builds it from start_year/end_year/is_current at render
+// time, both here in the admin list preview and on the public about page.
+
+function careerRowHtml(c) {
+  return `
+    <div class="mgmt-row" data-id="${escHtml(c.id)}">
+      <div class="mgmt-row-body">
+        <span class="mgmt-row-title">${escHtml(formatCareerPeriod(c))}</span>
+        <span class="mgmt-row-meta">${escHtml(c.title)}</span>
+      </div>
+      <button class="mgmt-row-edit" type="button" data-table="careers" data-id="${escHtml(c.id)}">수정</button>
+      <button class="mgmt-row-delete" type="button" data-table="careers" data-id="${escHtml(c.id)}">삭제</button>
+    </div>`;
+}
+
+// "현재 진행 중" 체크 시 종료 연도 입력란을 비우고 비활성화합니다 — is_current가
+// true인 행은 항상 end_year가 null이어야 한다는 DB 제약과 짝을 맞춘 UX입니다.
+function setCareerEndYearDisabled(disabled) {
+  const endYearInput = document.getElementById('career-end-year');
+  if (!endYearInput) return;
+  endYearInput.disabled = disabled;
+  if (disabled) endYearInput.value = '';
+}
+
+function enterCareerEditMode(row) {
+  const form = document.getElementById('career-form');
+  form.elements['id'].value = row.id;
+  form.elements['start_year'].value = row.start_year;
+  form.elements['is_current'].checked = !!row.is_current;
+  setCareerEndYearDisabled(!!row.is_current);
+  if (!row.is_current) form.elements['end_year'].value = row.end_year != null ? row.end_year : '';
+  form.elements['title'].value = row.title;
+
+  document.getElementById('career-form-submit').textContent = '이력 저장';
+  document.getElementById('career-form-cancel').style.display = 'inline';
+  clearSuccessActions('career-form-actions');
+  document.getElementById('career-form-message').textContent = '';
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function exitCareerEditMode() {
+  const form = document.getElementById('career-form');
+  if (!form) return;
+  form.reset();
+  form.elements['id'].value = '';
+  setCareerEndYearDisabled(false);
+  document.getElementById('career-form-submit').textContent = '이력 추가';
+  document.getElementById('career-form-cancel').style.display = 'none';
+}
+
+function setupCareerForm() {
+  const form = document.getElementById('career-form');
+  const message = document.getElementById('career-form-message');
+  const isCurrentCheckbox = document.getElementById('career-is-current');
+  let isSubmitting = false;
+
+  document.getElementById('career-form-cancel').addEventListener('click', exitCareerEditMode);
+  isCurrentCheckbox.addEventListener('change', () => setCareerEndYearDisabled(isCurrentCheckbox.checked));
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const submitBtn = document.getElementById('career-form-submit');
+    const wasEditing = !!form.elements['id'].value;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '저장 중…';
+    message.textContent = '';
+    message.className = 'form-message';
+    clearSuccessActions('career-form-actions');
+
+    try {
+      const fd = new FormData(form);
+      const editingId = fd.get('id');
+      const title = (fd.get('title') || '').trim();
+      const isCurrent = fd.get('is_current') === 'on';
+
+      if (!title) throw new Error('이력 내용을 입력해 주세요.');
+      if (title.length > 300) throw new Error('이력 내용은 300자 이내로 입력해 주세요.');
+
+      const startYearRaw = fd.get('start_year');
+      const startYear = Number(startYearRaw);
+      if (!startYearRaw || !Number.isInteger(startYear) || startYear < 1950 || startYear > 2100) {
+        throw new Error('시작 연도를 올바르게 입력해 주세요 (1950~2100).');
+      }
+
+      // is_current면 종료 연도를 항상 비워서 보냅니다 — DB 제약(careers_current_no_end)과
+      // 일치시켜, 체크박스와 실제 저장값이 서로 어긋나는 상태를 만들지 않습니다.
+      let endYear = null;
+      const endYearRaw = isCurrent ? '' : (fd.get('end_year') || '');
+      if (endYearRaw !== '') {
+        endYear = Number(endYearRaw);
+        if (!Number.isInteger(endYear) || endYear < 1950 || endYear > 2100) {
+          throw new Error('종료 연도를 올바르게 입력해 주세요 (1950~2100).');
+        }
+        if (endYear < startYear) throw new Error('종료 연도는 시작 연도 이후여야 합니다.');
+      }
+
+      const row = { start_year: startYear, end_year: endYear, is_current: isCurrent, title };
+
+      if (editingId) {
+        row.updated_at = new Date().toISOString();
+        const { error } = await supabaseClient.from('careers').update(row).eq('id', editingId);
+        if (error) throw new Error(describeSupabaseError(error));
+      } else {
+        const { error } = await supabaseClient.from('careers').insert(row);
+        if (error) throw new Error(describeSupabaseError(error));
+      }
+
+      exitCareerEditMode();
+      message.textContent = '주요 이력이 저장되었습니다.';
+      message.className = 'form-message success';
+      renderSuccessActions('career-form-actions', [PAGES.about]);
+      await loadAll();
+    } catch (err) {
+      message.textContent = err.message || describeSupabaseError(err);
+      message.className = 'form-message error';
+      submitBtn.textContent = wasEditing ? '이력 저장' : '이력 추가';
+    } finally {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+    }
+  });
+}
+
 // ── 관심 주제 form (add + edit) ──
 
 function enterInterestEditMode(row) {
@@ -820,6 +957,7 @@ async function init() {
   });
   setupActivityForm();
   setupSpecialtyForm();
+  setupCareerForm();
   setupInterestForm();
   COPY_GROUPS.forEach((g) => setupCopyForm(g));
 
