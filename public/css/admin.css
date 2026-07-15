@@ -133,6 +133,11 @@ body.admin-body {
 }
 
 .mgmt-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 22px;
   font-weight: 800;
   margin-bottom: 6px;
@@ -146,12 +151,51 @@ body.admin-body {
 }
 
 .mgmt-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 15px;
   font-weight: 700;
   margin: 28px 0 12px;
 }
 
 .mgmt-subhead:first-of-type { margin-top: 0; }
+
+/* Row used to pair a plain (non-heading) field label with a preview link —
+   .mgmt-title/.mgmt-subhead handle their own row layout directly since the
+   link is just a second flex child of the heading itself. */
+.mgmt-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Small outline "공개 미리보기" link — deliberately quieter than .btn-add so
+   it never competes with the actual save/upload buttons. */
+.preview-link {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.preview-link:hover { background: var(--ink); color: #FFFFFF; }
+
+.preview-link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
 
 .mgmt-list {
   display: flex;
