@@ -48,16 +48,19 @@
   function setupEmailCopy() {
     const email = 'sinjhon0105@naver.com';
     const button = document.getElementById('cta-copy-btn');
-    const message = document.getElementById('cta-copy-message');
     if (!button) return;
 
-    let hideTimer = null;
-    function showMessage(text) {
-      if (!message) return;
-      message.textContent = text;
-      message.classList.add('show');
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => message.classList.remove('show'), 3000);
+    const DEFAULT_LABEL = '이메일 주소 복사';
+    const SUCCESS_LABEL = '주소가 복사되었습니다';
+    const FAIL_LABEL = '복사에 실패했습니다';
+    let resetTimer = null;
+
+    // Shows a temporary label on the button itself (never the raw address)
+    // and reverts to the default label after ~2 seconds.
+    function flashLabel(text) {
+      button.textContent = text;
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => { button.textContent = DEFAULT_LABEL; }, 2000);
     }
 
     // Fallback for browsers/contexts where navigator.clipboard is unavailable
@@ -90,7 +93,7 @@
       } else {
         copied = fallbackCopy();
       }
-      showMessage(copied ? '이메일 주소가 복사되었습니다.' : '복사에 실패했습니다. 직접 입력해 주세요: ' + email);
+      flashLabel(copied ? SUCCESS_LABEL : FAIL_LABEL);
     });
   }
 

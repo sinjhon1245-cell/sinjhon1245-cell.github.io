@@ -420,20 +420,7 @@ h1, h2, h3, p { margin: 0; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12px;
-}
-
-.cta-copy-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
   gap: 10px;
-}
-
-.cta-email {
-  font-size: 14px;
-  color: #000000;
 }
 
 .cta-copy-btn {
@@ -449,17 +436,6 @@ h1, h2, h3, p { margin: 0; }
 }
 
 .cta-copy-btn:hover { background: var(--ink); color: #FFFFFF; }
-
-.cta-copy-message {
-  font-size: 13px;
-  font-weight: 600;
-  color: #000000;
-  min-height: 16px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.cta-copy-message.show { opacity: 0.85; }
 
 /* ───────── Records page ───────── */
 
