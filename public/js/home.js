@@ -45,6 +45,55 @@
     }).join('');
   }
 
+  function setupEmailCopy() {
+    const email = 'sinjhon0105@naver.com';
+    const button = document.getElementById('cta-copy-btn');
+    const message = document.getElementById('cta-copy-message');
+    if (!button) return;
+
+    let hideTimer = null;
+    function showMessage(text) {
+      if (!message) return;
+      message.textContent = text;
+      message.classList.add('show');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => message.classList.remove('show'), 3000);
+    }
+
+    // Fallback for browsers/contexts where navigator.clipboard is unavailable
+    // (older browsers, non-HTTPS contexts) — copies via a temporary, invisible
+    // textarea and the legacy execCommand API.
+    function fallbackCopy() {
+      const textarea = document.createElement('textarea');
+      textarea.value = email;
+      textarea.style.position = 'fixed';
+      textarea.style.top = '-1000px';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(textarea);
+      return ok;
+    }
+
+    button.addEventListener('click', async () => {
+      let copied = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(email);
+          copied = true;
+        } catch (e) {
+          copied = fallbackCopy();
+        }
+      } else {
+        copied = fallbackCopy();
+      }
+      showMessage(copied ? '이메일 주소가 복사되었습니다.' : '복사에 실패했습니다. 직접 입력해 주세요: ' + email);
+    });
+  }
+
   async function init() {
     try {
       const data = await fetchSiteContent();
@@ -80,5 +129,6 @@
     }
   }
 
+  setupEmailCopy();
   init();
 })();
