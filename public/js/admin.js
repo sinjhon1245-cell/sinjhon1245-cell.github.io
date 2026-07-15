@@ -35,6 +35,134 @@ function clearSuccessActions(containerId) {
   if (el) el.innerHTML = '';
 }
 
+// ── 사이트 문구 관리 (settings 테이블에 key/value로 저장, 스키마 변경 없음) ──
+
+// 'title' fields cap at 150 chars, 'description' fields at 2000, matching the
+// site-wide validation rule; 'email' gets a basic format check instead.
+const COPY_FIELD_TYPES = {
+  home_hero_title: 'title',
+  home_hero_description: 'description',
+  home_records_button_label: 'title',
+  home_about_button_label: 'title',
+  records_page_title: 'title',
+  records_page_description: 'description',
+  about_page_title: 'title',
+  about_intro_text: 'description',
+  contact_heading: 'title',
+  contact_email: 'email',
+  contact_email_subject: 'title',
+  footer_slogan: 'title'
+};
+
+const COPY_GROUPS = [
+  {
+    formId: 'copy-home-form', messageId: 'copy-home-message', actionsId: 'copy-home-actions',
+    pages: [PAGES.home],
+    fields: [
+      { key: 'home_hero_title', label: '히어로 제목' },
+      { key: 'home_hero_description', label: '히어로 설명' },
+      { key: 'home_records_button_label', label: '"활동기록 보기" 버튼 문구' },
+      { key: 'home_about_button_label', label: '"소개" 버튼 문구' }
+    ]
+  },
+  {
+    formId: 'copy-records-form', messageId: 'copy-records-message', actionsId: 'copy-records-actions',
+    pages: [PAGES.records],
+    fields: [
+      { key: 'records_page_title', label: '페이지 제목' },
+      { key: 'records_page_description', label: '페이지 설명' }
+    ]
+  },
+  {
+    formId: 'copy-about-form', messageId: 'copy-about-message', actionsId: 'copy-about-actions',
+    pages: [PAGES.about],
+    fields: [
+      { key: 'about_page_title', label: '페이지 제목' },
+      { key: 'about_intro_text', label: '소개 본문' }
+    ]
+  },
+  {
+    formId: 'copy-contact-form', messageId: 'copy-contact-message', actionsId: 'copy-contact-actions',
+    pages: [PAGES.home, PAGES.records, PAGES.about],
+    fields: [
+      { key: 'contact_heading', label: '문의 영역 제목' },
+      { key: 'contact_email', label: '받는 이메일 주소' },
+      { key: 'contact_email_subject', label: '메일 제목' },
+      { key: 'footer_slogan', label: '푸터 슬로건' }
+    ]
+  }
+];
+
+function validateCopyValue(key, label, rawValue) {
+  const value = (rawValue || '').trim();
+  if (!value) throw new Error(label + '을(를) 입력해 주세요.');
+
+  const type = COPY_FIELD_TYPES[key];
+  if (type === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      throw new Error('올바른 이메일 주소를 입력해 주세요.');
+    }
+  } else if (type === 'description') {
+    if (value.length > 2000) throw new Error(label + '은(는) 2000자 이내로 입력해 주세요.');
+  } else {
+    if (value.length > 150) throw new Error(label + '은(는) 150자 이내로 입력해 주세요.');
+  }
+  return value;
+}
+
+// Fills each field with its saved value, or the shipped default when nothing
+// has been saved yet (getSiteCopy, from site-data.js) — called from loadAll()
+// so the forms always reflect the latest settings after any save.
+function populateCopyForm(formId, fields, settings) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  fields.forEach(({ key }) => {
+    if (form.elements[key]) form.elements[key].value = getSiteCopy(settings, key);
+  });
+}
+
+function setupCopyForm({ formId, fields, messageId, actionsId, pages }) {
+  const form = document.getElementById(formId);
+  const message = document.getElementById(messageId);
+  let isSubmitting = false;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '저장 중…';
+    message.textContent = '';
+    message.className = 'form-message';
+    clearSuccessActions(actionsId);
+
+    try {
+      const fd = new FormData(form);
+      const rows = fields.map(({ key, label }) => ({
+        key, value: validateCopyValue(key, label, fd.get(key))
+      }));
+
+      const { error } = await supabaseClient.from('settings').upsert(rows, { onConflict: 'key' });
+      if (error) throw new Error(describeSupabaseError(error));
+
+      message.textContent = '저장되었습니다.';
+      message.className = 'form-message success';
+      renderSuccessActions(actionsId, pages);
+      await loadAll();
+    } catch (err) {
+      message.textContent = err.message || describeSupabaseError(err);
+      message.className = 'form-message error';
+    } finally {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+}
+
 // ── Login gate (Supabase Auth + admins-table check) ──
 
 async function isCurrentUserAdmin() {
@@ -255,6 +383,7 @@ async function loadAll() {
   renderList('interests-list-admin', currentData.interests, interestRowHtml, '아직 등록된 관심 주제가 없습니다.');
   showPreview('hero-photo-preview', currentData.settings.hero_image_url);
   showPreview('about-photo-preview', currentData.settings.about_portrait_url);
+  COPY_GROUPS.forEach((g) => populateCopyForm(g.formId, g.fields, currentData.settings));
   wireRowButtons();
 }
 
@@ -693,6 +822,7 @@ async function init() {
   setupActivityForm();
   setupSpecialtyForm();
   setupInterestForm();
+  COPY_GROUPS.forEach((g) => setupCopyForm(g));
 
   try {
     const loggedIn = await checkSession();

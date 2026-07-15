@@ -62,6 +62,13 @@
     wireFilterControls();
     try {
       const data = await fetchSiteContent();
+
+      const titleEl = document.querySelector('.records-title');
+      if (titleEl) titleEl.textContent = getSiteCopy(data.settings, 'records_page_title');
+      const introEl = document.querySelector('.records-intro');
+      if (introEl) introEl.textContent = getSiteCopy(data.settings, 'records_page_description');
+      applyGlobalSiteCopy(data.settings);
+
       allActivities = data.activities.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       grid.innerHTML = allActivities.map(recordCardHtml).join('');
       applyFilters();

@@ -38,6 +38,80 @@
 
   <div class="admin-load-error" id="admin-load-error" style="display:none"></div>
 
+  <!-- 사이트 문구 관리 -->
+  <section class="mgmt-section">
+    <h2 class="mgmt-title">사이트 문구 관리</h2>
+    <p class="mgmt-note">저장하면 Supabase에 바로 반영됩니다. GitHub 재배포 없이, 공개 페이지를 새로고침하면 최신 문구가 보입니다. 저장된 값이 없는 항목은 현재 사이트에 실제로 쓰이는 문구가 기본값으로 채워져 있습니다.</p>
+
+    <h3 class="mgmt-subhead">홈</h3>
+    <form class="mgmt-form" id="copy-home-form">
+      <label class="field">히어로 제목 (줄바꿈 가능)
+        <textarea name="home_hero_title" rows="2" required maxlength="150"></textarea>
+      </label>
+      <label class="field">히어로 설명
+        <textarea name="home_hero_description" rows="3" required maxlength="2000"></textarea>
+      </label>
+      <div class="form-row">
+        <label class="field">"활동기록 보기" 버튼 문구
+          <input type="text" name="home_records_button_label" required maxlength="150">
+        </label>
+        <label class="field">"소개" 버튼 문구
+          <input type="text" name="home_about_button_label" required maxlength="150">
+        </label>
+      </div>
+      <button class="btn-add" type="submit">홈 문구 저장</button>
+      <div class="form-message" id="copy-home-message"></div>
+      <div class="form-success-actions" id="copy-home-actions"></div>
+    </form>
+
+    <h3 class="mgmt-subhead">활동기록</h3>
+    <form class="mgmt-form" id="copy-records-form">
+      <label class="field">페이지 제목
+        <input type="text" name="records_page_title" required maxlength="150">
+      </label>
+      <label class="field">페이지 설명
+        <textarea name="records_page_description" rows="2" required maxlength="2000"></textarea>
+      </label>
+      <button class="btn-add" type="submit">활동기록 문구 저장</button>
+      <div class="form-message" id="copy-records-message"></div>
+      <div class="form-success-actions" id="copy-records-actions"></div>
+    </form>
+
+    <h3 class="mgmt-subhead">소개</h3>
+    <form class="mgmt-form" id="copy-about-form">
+      <label class="field">페이지 제목 (줄바꿈 가능)
+        <textarea name="about_page_title" rows="2" required maxlength="150"></textarea>
+      </label>
+      <label class="field">소개 본문 (문단 사이는 빈 줄로 구분)
+        <textarea name="about_intro_text" rows="6" required maxlength="2000"></textarea>
+      </label>
+      <button class="btn-add" type="submit">소개 문구 저장</button>
+      <div class="form-message" id="copy-about-message"></div>
+      <div class="form-success-actions" id="copy-about-actions"></div>
+    </form>
+
+    <h3 class="mgmt-subhead">문의·푸터</h3>
+    <form class="mgmt-form" id="copy-contact-form">
+      <label class="field">문의 영역 제목
+        <input type="text" name="contact_heading" required maxlength="150">
+      </label>
+      <div class="form-row">
+        <label class="field">받는 이메일 주소
+          <input type="email" name="contact_email" required maxlength="150">
+        </label>
+        <label class="field">메일 제목
+          <input type="text" name="contact_email_subject" required maxlength="150">
+        </label>
+      </div>
+      <label class="field">푸터 슬로건 (한 줄, 좁은 화면에서는 자동 줄바꿈)
+        <input type="text" name="footer_slogan" required maxlength="150">
+      </label>
+      <button class="btn-add" type="submit">문의·푸터 문구 저장</button>
+      <div class="form-message" id="copy-contact-message"></div>
+      <div class="form-success-actions" id="copy-contact-actions"></div>
+    </form>
+  </section>
+
   <!-- 사진 (히어로 · 프로필) -->
   <section class="mgmt-section">
     <h2 class="mgmt-title">사진</h2>

@@ -126,3 +126,66 @@ function applyRemoteImage(imgId, url) {
   const placeholder = img.nextElementSibling;
   if (placeholder && placeholder.classList.contains('img-placeholder')) placeholder.style.display = 'none';
 }
+
+// ── Editable site copy (admin.html "사이트 문구 관리" ↔ settings table) ──
+//
+// Every key below is stored as a plain row in the existing `settings` table
+// (key/value, same table the hero/profile photo URLs already use — no schema
+// change). SITE_COPY_DEFAULTS is what each page shipped with; getSiteCopy()
+// falls back to that default whenever a key hasn't been saved yet, so a
+// brand-new site (or a row nobody has touched) looks exactly like it did
+// before this feature existed.
+const SITE_COPY_DEFAULTS = {
+  home_hero_title: '기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간',
+  home_hero_description: '교실에서 실천한 수업, 연수와 자료 개발의 과정을 차곡차곡 기록합니다. 기록은 다음 수업의 가장 좋은 재료가 됩니다.',
+  home_records_button_label: '활동기록 보기 →',
+  home_about_button_label: '진진쌤 소개',
+  records_page_title: '활동기록',
+  records_page_description: '연도와 활동 분야로 기록을 골라 볼 수 있습니다.',
+  about_page_title: '수업을 기록하고,\n기록에서 다시 배웁니다.',
+  about_intro_text:
+    '안녕하세요, 초등학교에서 아이들과 함께 배우고 성장하는 진진쌤입니다. AI·SW교육과 과학·융합교육을 중심으로 프로젝트형 수업을 실천하고, 그 과정을 꾸준히 기록해 왔습니다. 이 공간은 그 기록들이 모여 다음 수업의 밑거름이 되는 아카이브입니다.\n\n교실에서 검증한 사례를 동료 선생님들과 나누는 연수와 교육자료 개발에도 참여하고 있습니다. 함께 나누고 싶은 이야기가 있다면 언제든 연락 주세요.',
+  contact_heading: '함께 나눌 이야기가 있나요?',
+  contact_email: 'sinjhon0105@naver.com',
+  contact_email_subject: '진진쌤 문의',
+  footer_slogan: '성장을 기록합니다.'
+};
+
+// Treats a missing row AND a blank/whitespace-only saved value the same way
+// (falls back to the shipped default) so an admin can never save a field
+// into an empty, broken-looking state.
+function getSiteCopy(settings, key) {
+  const value = settings && settings[key];
+  return (typeof value === 'string' && value.trim()) ? value : SITE_COPY_DEFAULTS[key];
+}
+
+function buildGmailComposeUrl(email, subject) {
+  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject);
+}
+
+// Copy that appears on every public page (footer slogan/email) or only on
+// the home page (CTA heading + mail link) — called once per page after
+// fetchSiteContent() resolves. Guards every lookup so pages that don't have
+// a given element (e.g. the CTA only exists on index.html) are unaffected.
+// Returns the resolved contact email so callers (e.g. the copy-to-clipboard
+// button on the home page) can reuse it without a second settings lookup.
+function applyGlobalSiteCopy(settings) {
+  const slogan = getSiteCopy(settings, 'footer_slogan');
+  document.querySelectorAll('.footer-tagline').forEach((el) => { el.textContent = slogan; });
+
+  const email = getSiteCopy(settings, 'contact_email');
+  document.querySelectorAll('.footer-email').forEach((el) => { el.textContent = email; });
+
+  const aboutEmailRow = document.getElementById('about-contact-email');
+  if (aboutEmailRow) aboutEmailRow.textContent = email;
+
+  const ctaHeading = document.querySelector('.cta h2');
+  if (ctaHeading) ctaHeading.textContent = getSiteCopy(settings, 'contact_heading');
+
+  const mailLink = document.querySelector('.cta-actions a');
+  if (mailLink) {
+    mailLink.href = buildGmailComposeUrl(email, getSiteCopy(settings, 'contact_email_subject'));
+  }
+
+  return email;
+}

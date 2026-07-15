@@ -119,6 +119,7 @@ h1, h2, h3, p { margin: 0; }
   font-weight: 800;
   letter-spacing: -0.03em;
   text-wrap: balance;
+  white-space: pre-line;
 }
 
 .hero-sub {
@@ -456,6 +457,7 @@ h1, h2, h3, p { margin: 0; }
   font-size: 56px;
   font-weight: 800;
   letter-spacing: -0.03em;
+  white-space: pre-line;
 }
 
 .records-count {
@@ -663,6 +665,7 @@ h1, h2, h3, p { margin: 0; }
   font-weight: 800;
   letter-spacing: -0.03em;
   text-wrap: balance;
+  white-space: pre-line;
 }
 
 .about-intro p {
@@ -670,6 +673,7 @@ h1, h2, h3, p { margin: 0; }
   line-height: 1.8;
   color: #333333;
   max-width: 662px;
+  white-space: pre-line;
 }
 
 .about-block h2 {

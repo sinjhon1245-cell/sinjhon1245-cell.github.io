@@ -45,8 +45,12 @@
     }).join('');
   }
 
+  // Updated once fetchSiteContent() resolves (see init()) — read at click
+  // time so the copy button always copies whatever contact_email currently
+  // resolves to, even if it changes after this page has loaded.
+  let resolvedContactEmail = SITE_COPY_DEFAULTS.contact_email;
+
   function setupEmailCopy() {
-    const email = 'sinjhon0105@naver.com';
     const button = document.getElementById('cta-copy-btn');
     if (!button) return;
 
@@ -68,7 +72,7 @@
     // textarea and the legacy execCommand API.
     function fallbackCopy() {
       const textarea = document.createElement('textarea');
-      textarea.value = email;
+      textarea.value = resolvedContactEmail;
       textarea.style.position = 'fixed';
       textarea.style.top = '-1000px';
       textarea.style.opacity = '0';
@@ -85,7 +89,7 @@
       let copied = false;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
-          await navigator.clipboard.writeText(email);
+          await navigator.clipboard.writeText(resolvedContactEmail);
           copied = true;
         } catch (e) {
           copied = fallbackCopy();
@@ -102,6 +106,16 @@
       const data = await fetchSiteContent();
 
       if (data.settings) applyRemoteImage('hero-photo', data.settings.hero_image_url);
+
+      const heroTitle = document.querySelector('.hero-title');
+      if (heroTitle) heroTitle.textContent = getSiteCopy(data.settings, 'home_hero_title');
+      const heroSub = document.querySelector('.hero-sub');
+      if (heroSub) heroSub.textContent = getSiteCopy(data.settings, 'home_hero_description');
+      const recordsBtn = document.querySelector('.btn-primary');
+      if (recordsBtn) recordsBtn.textContent = getSiteCopy(data.settings, 'home_records_button_label');
+      const aboutBtn = document.querySelector('.link-underline');
+      if (aboutBtn) aboutBtn.textContent = getSiteCopy(data.settings, 'home_about_button_label');
+      resolvedContactEmail = applyGlobalSiteCopy(data.settings);
 
       const featured = data.activities
         .filter((a) => a.featured)
