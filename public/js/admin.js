@@ -83,12 +83,11 @@ const COPY_GROUPS = [
   },
   {
     formId: 'copy-contact-form', messageId: 'copy-contact-message', actionsId: 'copy-contact-actions',
-    pages: [PAGES.home, PAGES.records, PAGES.about],
+    pages: [PAGES.home, PAGES.about],
     fields: [
       { key: 'contact_heading', label: '문의 영역 제목' },
       { key: 'contact_email', label: '받는 이메일 주소' },
-      { key: 'contact_email_subject', label: '메일 제목' },
-      { key: 'footer_slogan', label: '푸터 슬로건' }
+      { key: 'contact_email_subject', label: '메일 제목' }
     ]
   }
 ];
