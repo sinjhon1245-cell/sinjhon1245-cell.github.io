@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리자 · 진진쌤</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="public/css/style.css">
+<link rel="stylesheet" href="public/css/admin.css">
+<script src="public/js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="public/js/supabase-client.js"></script>
+</head>
+<body class="admin-body">
+
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h1>관리자 로그인</h1>
+    <p>이 페이지는 선생님만 사용하는 도구입니다. Supabase에 등록한 이메일과 비밀번호로 로그인하세요.</p>
+    <input type="email" id="gate-email" placeholder="이메일" autocomplete="username">
+    <input type="password" id="gate-input" placeholder="비밀번호" autocomplete="current-password">
+    <button id="gate-submit" type="button">로그인</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<div class="admin-shell" id="admin-shell" style="display:none">
+  <div class="admin-topbar">
+    <button class="btn-logout" id="logout-btn" type="button">로그아웃</button>
+  </div>
+
+  <div class="admin-header">
+    <span class="brand-tag">진진쌤 교육활동 아카이브 · 관리자 전용</span>
+    <h1 class="admin-title">콘텐츠 관리</h1>
+    <p class="admin-sub">여기서 추가하거나 삭제한 내용은 실시간으로 실제 홈페이지(홈 · 활동기록 · 소개)에 반영됩니다. 이 관리 화면 자체는 방문자에게 보이지 않습니다.</p>
+  </div>
+
+  <div class="admin-load-error" id="admin-load-error" style="display:none"></div>
+
+  <!-- 사진 (히어로 · 프로필) -->
+  <section class="mgmt-section">
+    <h2 class="mgmt-title">사진</h2>
+    <p class="mgmt-note">홈 화면 히어로 사진과 소개 페이지 프로필 사진을 실시간으로 교체합니다.</p>
+
+    <div class="photo-slot">
+      <span class="field">히어로 사진 (홈 화면)</span>
+      <div class="img-frame rounded-18 hero-frame">
+        <img id="hero-photo-preview" alt="히어로 사진 미리보기" style="display:none">
+        <div class="img-placeholder" style="display:flex">아직 사진이 없습니다</div>
+      </div>
+      <input type="file" id="hero-photo-input" accept="image/jpeg,image/png,image/webp">
+      <span class="field-hint">JPG · PNG · WEBP, 최대 10MB</span>
+      <button class="btn-add" type="button" id="hero-photo-upload-btn">업로드</button>
+      <div class="form-message" id="hero-photo-message"></div>
+      <div class="form-success-actions" id="hero-photo-actions"></div>
+    </div>
+
+    <div class="photo-slot">
+      <span class="field">프로필 사진 (소개 페이지)</span>
+      <div class="img-frame rounded-18 about-frame">
+        <img id="about-photo-preview" alt="프로필 사진 미리보기" style="display:none">
+        <div class="img-placeholder" style="display:flex">아직 사진이 없습니다</div>
+      </div>
+      <input type="file" id="about-photo-input" accept="image/jpeg,image/png,image/webp">
+      <span class="field-hint">JPG · PNG · WEBP, 최대 10MB</span>
+      <button class="btn-add" type="button" id="about-photo-upload-btn">업로드</button>
+      <div class="form-message" id="about-photo-message"></div>
+      <div class="form-success-actions" id="about-photo-actions"></div>
+    </div>
+  </section>
+
+  <!-- 활동기록 -->
+  <section class="mgmt-section">
+    <h2 class="mgmt-title">활동기록</h2>
+    <p class="mgmt-note">"대표 활동으로 표시"를 체크하면 홈 화면의 대표 활동에도 함께 노출됩니다.</p>
+    <div class="mgmt-list" id="activities-list"><p class="content-loading">불러오는 중…</p></div>
+
+    <form class="mgmt-form" id="activity-form">
+      <input type="hidden" name="id">
+      <div class="form-row">
+        <label class="field">제목
+          <input type="text" name="title" required placeholder="활동 제목">
+        </label>
+        <label class="field">연도
+          <input type="number" name="year" required placeholder="2026" value="2026">
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="field">활동 분야
+          <select name="field">
+            <option>AI·SW교육</option>
+            <option>과학·융합교육</option>
+            <option>프로젝트형 수업</option>
+            <option>디지털 기반 수업혁신</option>
+            <option>교사 연수</option>
+            <option>교육자료 개발</option>
+          </select>
+        </label>
+        <label class="field">역할
+          <select name="role">
+            <option>기획·운영</option>
+            <option>강사</option>
+            <option>개발</option>
+            <option>연구</option>
+          </select>
+        </label>
+        <label class="field">활동 유형
+          <select name="type">
+            <option>수업</option>
+            <option>연수</option>
+            <option>자료개발</option>
+            <option>프로젝트</option>
+            <option>대회·행사</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">한 줄 설명
+        <textarea name="description" rows="2" placeholder="활동을 간단히 소개해 주세요"></textarea>
+      </label>
+      <label class="field">사진 (선택 — 선택하지 않으면 기존 사진이 그대로 유지됩니다)
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+        <span class="field-hint">JPG · PNG · WEBP, 최대 10MB</span>
+      </label>
+      <label class="field field-checkbox" id="activity-remove-photo-wrap" style="display:none">
+        <input type="checkbox" name="remove_photo"> 현재 사진 삭제 (새 사진을 선택하지 않으면 사진 없이 저장됩니다)
+      </label>
+      <label class="field field-checkbox">
+        <input type="checkbox" name="featured"> 대표 활동으로 표시 (홈 화면에도 노출)
+      </label>
+      <div class="form-row-actions">
+        <button class="btn-add" type="submit" id="activity-form-submit">활동 추가</button>
+        <span class="cancel-edit-link" id="activity-form-cancel" style="display:none">수정 취소</span>
+      </div>
+      <div class="form-message" id="activity-form-message"></div>
+      <div class="form-success-actions" id="activity-form-actions"></div>
+    </form>
+  </section>
+
+  <!-- 전문 분야 -->
+  <section class="mgmt-section">
+    <h2 class="mgmt-title">전문 분야</h2>
+    <p class="mgmt-note">홈 화면 "전문 분야" 목록에 표시됩니다.</p>
+    <div class="mgmt-list" id="specialties-list-admin"><p class="content-loading">불러오는 중…</p></div>
+
+    <form class="mgmt-form" id="specialty-form">
+      <input type="hidden" name="id">
+      <label class="field">이름
+        <input type="text" name="name" required placeholder="예: AI·SW교육">
+      </label>
+      <label class="field">설명
+        <textarea name="description" rows="2" required placeholder="한두 문장으로 설명해 주세요"></textarea>
+      </label>
+      <div class="form-row-actions">
+        <button class="btn-add" type="submit" id="specialty-form-submit">전문 분야 추가</button>
+        <span class="cancel-edit-link" id="specialty-form-cancel" style="display:none">수정 취소</span>
+      </div>
+      <div class="form-message" id="specialty-form-message"></div>
+      <div class="form-success-actions" id="specialty-form-actions"></div>
+    </form>
+  </section>
+
+  <!-- 관심 주제 -->
+  <section class="mgmt-section">
+    <h2 class="mgmt-title">관심 주제</h2>
+    <p class="mgmt-note">소개 페이지의 태그로 표시됩니다.</p>
+    <div class="mgmt-list" id="interests-list-admin"><p class="content-loading">불러오는 중…</p></div>
+
+    <form class="mgmt-form" id="interest-form">
+      <input type="hidden" name="id">
+      <label class="field">태그
+        <input type="text" name="label" required placeholder="예: AI 리터러시">
+      </label>
+      <div class="form-row-actions">
+        <button class="btn-add" type="submit" id="interest-form-submit">관심 주제 추가</button>
+        <span class="cancel-edit-link" id="interest-form-cancel" style="display:none">수정 취소</span>
+      </div>
+      <div class="form-message" id="interest-form-message"></div>
+      <div class="form-success-actions" id="interest-form-actions"></div>
+    </form>
+  </section>
+</div>
+
+<script src="public/js/site-data.js"></script>
+<script src="public/js/admin.js"></script>
+</body>
+</html>

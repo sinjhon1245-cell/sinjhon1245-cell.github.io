@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>소개 · 진진쌤</title>
+<meta name="description" content="수업을 기록하고, 기록에서 다시 배웁니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="public/css/style.css">
+<script src="public/js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="public/js/supabase-client.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-name">진진쌤</span>
+      <span class="brand-tag">교육활동 아카이브</span>
+    </a>
+    <nav class="site-nav">
+      <a class="nav-pill" href="index.html">홈</a>
+      <a class="nav-pill" href="records.html">활동기록</a>
+      <a class="nav-pill active" href="about.html">소개</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="about-section">
+    <div class="wrap">
+      <div class="about-side">
+        <div class="img-frame rounded-18 about-frame">
+          <img id="about-portrait-photo" src="public/images/about-portrait.jpg" alt="송진선 프로필 사진" onerror="imgFallback(this)">
+          <div class="img-placeholder">프로필 사진을 놓아 주세요</div>
+        </div>
+        <div>
+          <span class="about-name">송진선</span><br>
+          <span class="about-role">초등학교 교사 · 교육활동 아카이버</span>
+        </div>
+      </div>
+
+      <div class="about-main">
+        <div class="about-intro">
+          <h1>수업을 기록하고,<br>기록에서 다시 배웁니다.</h1>
+          <p>안녕하세요, 초등학교에서 아이들과 함께 배우고 성장하는 진진쌤입니다. AI·SW교육과 과학·융합교육을 중심으로 프로젝트형 수업을 실천하고, 그 과정을 꾸준히 기록해 왔습니다. 이 공간은 그 기록들이 모여 다음 수업의 밑거름이 되는 아카이브입니다.</p>
+          <p>교실에서 검증한 사례를 동료 선생님들과 나누는 연수와 교육자료 개발에도 참여하고 있습니다. 함께 나누고 싶은 이야기가 있다면 언제든 연락 주세요.</p>
+        </div>
+
+        <div class="about-block">
+          <h2>주요 이력</h2>
+          <div class="about-table">
+            <span class="about-when">2024 – 현재</span><span>에듀테크 선도교사단 · 디지털 기반 수업혁신 연구</span>
+            <span class="about-when">2023 – 현재</span><span>교육청 초등 교원 연수 강사 (AI·SW교육)</span>
+            <span class="about-when">2022 – 현재</span><span>초등 SW·AI 수업자료 공동 개발진</span>
+            <span class="about-when">2019 – 현재</span><span>초등학교 교사 재직</span>
+          </div>
+        </div>
+
+        <div class="about-block">
+          <h2>관심 주제</h2>
+          <div class="about-tags" id="interests-list">
+            <span class="content-loading">불러오는 중…</span>
+          </div>
+        </div>
+
+        <div class="about-block">
+          <h2>연락처</h2>
+          <div class="about-table">
+            <span class="about-when">이메일</span><span>sinjhon0105@naver.com</span>
+            <span class="about-when">블로그</span><span><a href="https://blog.naver.com/jinjinssem">blog.naver.com/jinjinssem</a></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">함께 성장하는 수업을<br>기록합니다.</p>
+      <nav class="footer-nav">
+        <a href="index.html">홈</a>
+        <a href="records.html">활동기록</a>
+        <a href="about.html">소개</a>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 진진쌤. 교육활동 아카이브</span>
+      <span>sinjhon0105@naver.com</span>
+    </div>
+  </div>
+</footer>
+
+<script src="public/js/site-data.js"></script>
+<script src="public/js/about.js"></script>
+</body>
+</html>

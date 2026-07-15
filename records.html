@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>활동기록 · 진진쌤</title>
+<meta name="description" content="연도와 활동 분야로 기록을 골라 볼 수 있습니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="public/css/style.css">
+<script src="public/js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="public/js/supabase-client.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-name">진진쌤</span>
+      <span class="brand-tag">교육활동 아카이브</span>
+    </a>
+    <nav class="site-nav">
+      <a class="nav-pill" href="index.html">홈</a>
+      <a class="nav-pill active" href="records.html">활동기록</a>
+      <a class="nav-pill" href="about.html">소개</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="records-head wrap">
+    <div class="title-row">
+      <h1 class="records-title">활동기록</h1>
+      <span class="records-count">불러오는 중…</span>
+    </div>
+    <p class="records-intro">연도와 활동 분야로 기록을 골라 볼 수 있습니다.</p>
+  </section>
+
+  <!-- Filters -->
+  <section class="filters wrap">
+    <div class="filter-group">
+      <span class="filter-label">연도</span>
+      <div class="chip-row">
+        <span class="chip active" data-group="year" data-value="전체">전체</span>
+        <span class="chip" data-group="year" data-value="2026">2026</span>
+        <span class="chip" data-group="year" data-value="2025">2025</span>
+        <span class="chip" data-group="year" data-value="2024">2024</span>
+        <span class="chip" data-group="year" data-value="2023">2023</span>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">활동 분야</span>
+      <div class="chip-row">
+        <span class="chip active" data-group="field" data-value="전체">전체</span>
+        <span class="chip" data-group="field" data-value="AI·SW교육">AI·SW교육</span>
+        <span class="chip" data-group="field" data-value="과학·융합교육">과학·융합교육</span>
+        <span class="chip" data-group="field" data-value="프로젝트형 수업">프로젝트형 수업</span>
+        <span class="chip" data-group="field" data-value="디지털 기반 수업혁신">디지털 기반 수업혁신</span>
+        <span class="chip" data-group="field" data-value="교사 연수">교사 연수</span>
+        <span class="chip" data-group="field" data-value="교육자료 개발">교육자료 개발</span>
+      </div>
+    </div>
+    <div class="filters-footer">
+      <span class="reset-link">필터 초기화</span>
+    </div>
+  </section>
+
+  <!-- Cards -->
+  <section class="records-section wrap">
+    <div class="records-grid" id="records-grid">
+      <p class="content-loading">불러오는 중…</p>
+    </div>
+
+    <div class="no-results" style="display:none">
+      <span>조건에 맞는 기록이 없습니다</span>
+      <span class="reset-link">필터 초기화</span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">함께 성장하는 수업을<br>기록합니다.</p>
+      <nav class="footer-nav">
+        <a href="index.html">홈</a>
+        <a href="records.html">활동기록</a>
+        <a href="about.html">소개</a>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 진진쌤. 교육활동 아카이브</span>
+      <span>sinjhon0105@naver.com</span>
+    </div>
+  </div>
+</footer>
+
+<script src="public/js/site-data.js"></script>
+<script src="public/js/records.js"></script>
+</body>
+</html>

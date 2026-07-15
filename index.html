@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진진쌤 · 교육활동 아카이브</title>
+<meta name="description" content="기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="public/css/style.css">
+<script src="public/js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="public/js/supabase-client.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-name">진진쌤</span>
+      <span class="brand-tag">교육활동 아카이브</span>
+    </a>
+    <nav class="site-nav">
+      <a class="nav-pill active" href="index.html">홈</a>
+      <a class="nav-pill" href="records.html">활동기록</a>
+      <a class="nav-pill" href="about.html">소개</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1 class="hero-title">기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간</h1>
+        <p class="hero-sub">교실에서 실천한 수업, 연수와 자료 개발의 과정을 차곡차곡 기록합니다. 기록은 다음 수업의 가장 좋은 재료가 됩니다.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="records.html">활동기록 보기 →</a>
+          <a class="link-underline" href="about.html">진진쌤 소개</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <div class="img-frame rounded-18 hero-frame">
+          <img id="hero-photo" src="public/images/hero.jpg" alt="대표 교실 사진" onerror="imgFallback(this)">
+          <div class="img-placeholder">대표 교실 사진을 놓아 주세요</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyword strip -->
+  <div class="keyword-strip">
+    <div class="wrap">
+      <span>AI·SW교육</span>
+      <span>과학·융합교육</span>
+      <span>프로젝트형 수업</span>
+      <span>디지털 기반 수업혁신</span>
+      <span>교사 연수</span>
+      <span>교육자료 개발</span>
+    </div>
+  </div>
+
+  <!-- Featured -->
+  <section class="featured wrap">
+    <div class="section-head">
+      <h2 class="section-title">대표 활동</h2>
+      <a class="section-link" href="records.html">전체 보기 →</a>
+    </div>
+    <div class="featured-grid" id="featured-grid">
+      <p class="content-loading">불러오는 중…</p>
+    </div>
+  </section>
+
+  <!-- Specialties -->
+  <section class="specialties wrap">
+    <div class="section-head">
+      <h2 class="section-title">전문 분야</h2>
+      <span class="specialties-tagline">배우고, 실천하고, 나눕니다</span>
+    </div>
+    <div id="specialties-list">
+      <p class="content-loading">불러오는 중…</p>
+    </div>
+  </section>
+
+  <!-- Timeline -->
+  <section class="timeline-section dark">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 class="section-title">활동 타임라인</h2>
+        <a class="section-link" href="records.html">전체 활동기록 보기 →</a>
+      </div>
+
+      <div id="timeline-body">
+        <p class="content-loading">불러오는 중…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="wrap">
+      <h2>함께 나눌 수업 이야기가 있나요?</h2>
+      <a href="mailto:sinjhon0105@naver.com">메일 보내기 →</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">함께 성장하는 수업을<br>기록합니다.</p>
+      <nav class="footer-nav">
+        <a href="index.html">홈</a>
+        <a href="records.html">활동기록</a>
+        <a href="about.html">소개</a>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 진진쌤. 교육활동 아카이브</span>
+      <span>sinjhon0105@naver.com</span>
+    </div>
+  </div>
+</footer>
+
+<script src="public/js/site-data.js"></script>
+<script src="public/js/home.js"></script>
+</body>
+</html>

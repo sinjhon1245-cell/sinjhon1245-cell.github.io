@@ -1,0 +1,427 @@
+/* 진진쌤 사이트 — 관리자 도구 전용 스타일 (공개 사이트와 분리) */
+
+/* style.css sets body { min-width: 1100px } for the public site's fixed
+   desktop layout — override it here so the admin tool itself stays usable
+   on mobile widths without touching the public design. */
+body.admin-body {
+  background: #F7F6F2;
+  min-width: 0;
+}
+
+.admin-shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 56px 40px 120px;
+}
+
+/* ── Login gate ── */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #F7F6F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gate-box {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px;
+  border: 1px solid var(--ink);
+  border-radius: 16px;
+  background: #FFFFFF;
+}
+
+.gate-box h1 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.gate-box p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #666666;
+}
+
+.gate-box input {
+  font-family: inherit;
+  font-size: 15px;
+  padding: 11px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  outline-color: var(--ink);
+}
+
+.gate-box button {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ink);
+  color: #FFFFFF;
+}
+
+.gate-box button:hover { background: #333333; }
+.gate-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gate-error {
+  font-size: 13px;
+  color: #B3261E;
+  min-height: 1em;
+}
+
+/* ── Admin shell ── */
+
+.admin-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.btn-logout {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: none;
+  color: var(--ink);
+}
+
+.btn-logout:hover { background: #ECECEC; }
+
+.admin-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.admin-sub {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #555555;
+  max-width: 640px;
+}
+
+/* ── Management sections ── */
+
+.mgmt-section {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid #DEDCD3;
+}
+
+.mgmt-section:first-of-type {
+  margin-top: 40px;
+}
+
+.mgmt-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.mgmt-note {
+  font-size: 13px;
+  color: #888888;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.mgmt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.mgmt-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border: 1px solid #DEDCD3;
+  border-radius: 12px;
+  background: #FFFFFF;
+}
+
+.mgmt-row-thumb,
+.mgmt-row-thumb-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #F0EEE6;
+}
+
+.mgmt-row-thumb { object-fit: cover; }
+
+.mgmt-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mgmt-row-title {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mgmt-row-meta {
+  font-size: 12px;
+  color: #888888;
+}
+
+.mgmt-row-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #111111;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.mgmt-row-delete {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #B3261E;
+  background: none;
+  color: #B3261E;
+  flex-shrink: 0;
+}
+
+.mgmt-row-delete:hover { background: #B3261E; color: #FFFFFF; }
+.mgmt-row-delete:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.mgmt-empty { font-size: 13px; color: #999999; }
+
+.mgmt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px dashed #C7C4B8;
+  border-radius: 14px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select,
+.field textarea {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 10px 12px;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  outline-color: var(--ink);
+}
+
+.field input[type="file"] { font-size: 12.5px; font-weight: 400; }
+
+.field textarea { resize: vertical; }
+
+.field-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add {
+  align-self: flex-start;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ink);
+  color: #FFFFFF;
+}
+
+.btn-add:hover { background: #333333; }
+.btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.form-message {
+  font-size: 13px;
+  min-height: 1em;
+}
+
+.form-message.error { color: #B3261E; }
+.form-message.success { color: #1D7A46; }
+
+.form-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cancel-edit-link {
+  cursor: pointer;
+  font-size: 13px;
+  color: #666666;
+  border-bottom: 1px solid var(--ink);
+}
+
+.form-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.form-success-actions:empty { display: none; }
+
+.form-success-actions a,
+.form-success-actions button {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: #FFFFFF;
+  color: var(--ink);
+}
+
+.form-success-actions a:hover,
+.form-success-actions button:hover { background: #ECECEC; color: var(--ink); }
+
+.mgmt-row-edit {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: none;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.mgmt-row-edit:hover { background: #ECECEC; }
+
+.photo-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 360px;
+  margin-bottom: 28px;
+  padding: 18px;
+  border: 1px solid #DEDCD3;
+  border-radius: 14px;
+  background: #FFFFFF;
+}
+
+.photo-slot input[type="file"] { font-size: 12.5px; }
+
+.field-hint {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #999999;
+}
+
+.admin-load-error {
+  font-size: 14px;
+  color: #B3261E;
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  border: 1px solid #B3261E;
+  border-radius: 10px;
+  background: #FCEEEE;
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 640px) {
+  .admin-shell {
+    padding: 32px 20px 80px;
+  }
+
+  .admin-title {
+    font-size: 26px;
+  }
+
+  .gate-box {
+    width: calc(100vw - 48px);
+    max-width: 360px;
+    padding: 28px;
+  }
+
+  .mgmt-row {
+    flex-wrap: wrap;
+  }
+
+  .mgmt-row-body {
+    min-width: 100%;
+    order: 1;
+  }
+
+  .mgmt-row-thumb,
+  .mgmt-row-thumb-placeholder {
+    order: 0;
+  }
+
+  .mgmt-row-badge,
+  .mgmt-row-edit,
+  .mgmt-row-delete {
+    order: 2;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row-actions {
+    flex-wrap: wrap;
+  }
+
+  .photo-slot {
+    max-width: 100%;
+  }
+}
