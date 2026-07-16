@@ -764,6 +764,11 @@ h1, h2, h3, p { margin: 0; }
 
 .about-table .about-when { color: #666666; }
 
+/* Career titles come from Supabase free text and may contain line breaks —
+   #career-list is the only .about-table whose second column is a career
+   title (the other .about-table, further down, is the contact info list). */
+#career-list span:not(.about-when) { white-space: pre-line; }
+
 .about-tags {
   display: flex;
   flex-wrap: wrap;
