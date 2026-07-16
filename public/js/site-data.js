@@ -90,7 +90,7 @@ async function fetchSiteContent() {
     supabaseClient.from('specialties').select('*').order('sort_order', { ascending: true }),
     supabaseClient.from('interests').select('*').order('sort_order', { ascending: true }),
     supabaseClient.from('settings').select('*'),
-    supabaseClient.from('careers').select('*').order('start_year', { ascending: false }).order('created_at', { ascending: false })
+    supabaseClient.from('careers').select('*').order('is_current', { ascending: false }).order('start_year', { ascending: false }).order('created_at', { ascending: false })
   ]);
 
   const firstError = activitiesRes.error || specialtiesRes.error || interestsRes.error || settingsRes.error;
@@ -110,15 +110,23 @@ async function fetchSiteContent() {
   };
 }
 
-// "2024–" / "2022–2024" / "2023" — built from start_year/end_year/is_current
-// at render time so the finished sentence is never stored in the database
-// (admins only ever edit the three underlying fields). Uses an en dash (–)
-// with no surrounding spaces; an ongoing career (is_current) shows just a
-// trailing dash with no "현재" text, and a single-year career (end_year equal
-// to start_year, or no end_year) shows the year once instead of "2024–2024".
+// "2024 – 현재" / "2022 – 2024" / "2023" — built from start_year/end_year/
+// is_current at render time so the finished sentence is never stored in the
+// database (admins only ever edit the three underlying fields). Uses an en
+// dash (–) with a space on both sides; a single-year career (end_year equal
+// to start_year, or no end_year) shows the year once instead of "2024 – 2024".
 function formatCareerPeriod(career) {
-  if (career.is_current) return career.start_year + '–';
-  if (career.end_year != null && career.end_year !== career.start_year) return career.start_year + '–' + career.end_year;
+  if (career.is_current) {
+    return career.start_year + ' – 현재';
+  }
+
+  if (
+    career.end_year != null &&
+    career.end_year !== career.start_year
+  ) {
+    return career.start_year + ' – ' + career.end_year;
+  }
+
   return String(career.start_year);
 }
 
