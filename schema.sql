@@ -67,7 +67,7 @@ alter table settings add column if not exists path text;
 -- start_year/end_year/is_current로부터 화면에서 조합합니다.
 create extension if not exists pgcrypto;
 
-create table if not exists careers (
+create table if not exists public.careers (
   id uuid primary key default gen_random_uuid(),
   start_year int not null,
   end_year int,
@@ -77,7 +77,9 @@ create table if not exists careers (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists careers_start_year_idx on careers (start_year desc, created_at desc);
+-- 인덱스는 항상 부모 테이블(public.careers)과 같은 스키마(public)에 생성됩니다 —
+-- CREATE INDEX 문법상 인덱스 이름 자체에는 스키마를 붙일 수 없습니다.
+create index if not exists careers_start_year_idx on public.careers (start_year desc, created_at desc);
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- 2. 관리자 테이블 — "로그인한 사용자"가 아니라 "이 표에 등록된 사용자"만 관리자
@@ -160,7 +162,7 @@ alter table activities enable row level security;
 alter table specialties enable row level security;
 alter table interests enable row level security;
 alter table settings enable row level security;
-alter table careers enable row level security;
+alter table public.careers enable row level security;
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- 5. RLS 정책 — 조회는 전체 공개, 추가·수정·삭제는 is_admin()인 사용자만
@@ -221,15 +223,15 @@ create policy "settings_insert_admin" on settings for insert with check (is_admi
 create policy "settings_update_admin" on settings for update using (is_admin()) with check (is_admin());
 
 -- careers
-drop policy if exists "careers_select_public" on careers;
-drop policy if exists "careers_insert_admin" on careers;
-drop policy if exists "careers_update_admin" on careers;
-drop policy if exists "careers_delete_admin" on careers;
+drop policy if exists "careers_select_public" on public.careers;
+drop policy if exists "careers_insert_admin" on public.careers;
+drop policy if exists "careers_update_admin" on public.careers;
+drop policy if exists "careers_delete_admin" on public.careers;
 
-create policy "careers_select_public" on careers for select using (true);
-create policy "careers_insert_admin" on careers for insert with check (is_admin());
-create policy "careers_update_admin" on careers for update using (is_admin()) with check (is_admin());
-create policy "careers_delete_admin" on careers for delete using (is_admin());
+create policy "careers_select_public" on public.careers for select using (true);
+create policy "careers_insert_admin" on public.careers for insert with check (public.is_admin());
+create policy "careers_update_admin" on public.careers for update using (public.is_admin()) with check (public.is_admin());
+create policy "careers_delete_admin" on public.careers for delete using (public.is_admin());
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- 6. Storage — 사진 버킷 + 정책 (조회는 전체 공개, 업로드·수정·삭제는 관리자만)
@@ -276,22 +278,22 @@ alter table interests add constraint interests_label_length check (char_length(l
 alter table interests drop constraint if exists interests_label_unique;
 alter table interests add constraint interests_label_unique unique (label);
 
-alter table careers drop constraint if exists careers_title_length;
-alter table careers add constraint careers_title_length check (char_length(title) between 1 and 300);
+alter table public.careers drop constraint if exists careers_title_length;
+alter table public.careers add constraint careers_title_length check (char_length(btrim(title)) between 1 and 300);
 
-alter table careers drop constraint if exists careers_start_year_range;
-alter table careers add constraint careers_start_year_range check (start_year between 1950 and 2100);
+alter table public.careers drop constraint if exists careers_start_year_range;
+alter table public.careers add constraint careers_start_year_range check (start_year between 1950 and 2100);
 
-alter table careers drop constraint if exists careers_end_year_range;
-alter table careers add constraint careers_end_year_range check (end_year is null or end_year between 1950 and 2100);
+alter table public.careers drop constraint if exists careers_end_year_range;
+alter table public.careers add constraint careers_end_year_range check (end_year is null or end_year between 1950 and 2100);
 
 -- is_current가 true이면 end_year는 반드시 null이어야 합니다.
-alter table careers drop constraint if exists careers_current_no_end;
-alter table careers add constraint careers_current_no_end check (not is_current or end_year is null);
+alter table public.careers drop constraint if exists careers_current_no_end;
+alter table public.careers add constraint careers_current_no_end check (not is_current or end_year is null);
 
 -- end_year가 있다면(= is_current가 false인 경우) start_year 이상이어야 합니다.
-alter table careers drop constraint if exists careers_end_after_start;
-alter table careers add constraint careers_end_after_start check (end_year is null or end_year >= start_year);
+alter table public.careers drop constraint if exists careers_end_after_start;
+alter table public.careers add constraint careers_end_after_start check (end_year is null or end_year >= start_year);
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- 8. 초기 데이터 — 지금 사이트에 있는 내용 그대로 (이미 들어있으면 건너뜁니다)
@@ -333,9 +335,12 @@ insert into settings (key, value) values
   ('about_portrait_url', null)
 on conflict (key) do nothing;
 
--- 고정 UUID로 등록 — 이 SQL을 여러 번 실행해도 중복 삽입되지 않습니다.
--- 관리자 화면에서 이 4개를 삭제하거나 새 이력을 추가할 수 있습니다(예시일 뿐).
-insert into careers (id, start_year, end_year, is_current, title) values
+-- 고정 UUID + ON CONFLICT DO NOTHING — 이 SQL을 여러 번 실행해도 중복 삽입되지
+-- 않고, 현재 존재하는 초기 행(관리자가 이미 수정/삭제한 행 포함)을 덮어쓰지
+-- 않습니다. 다만 관리자가 이 초기 행을 삭제한 뒤 이 SQL을 다시 실행하면 해당
+-- 행이 그대로 재삽입될 수 있습니다. 관리자 화면에서 이 4개를 삭제하거나 새
+-- 이력을 추가할 수 있습니다(예시일 뿐).
+insert into public.careers (id, start_year, end_year, is_current, title) values
   ('a1a1a1a1-0000-4000-8000-000000000001', 2024, null, true, '에듀테크 선도교사단 · 디지털 기반 수업혁신 연구'),
   ('a1a1a1a1-0000-4000-8000-000000000002', 2023, null, true, '교육청 초등 교원 연수 강사 (AI·SW교육)'),
   ('a1a1a1a1-0000-4000-8000-000000000003', 2022, null, true, '초등 SW·AI 수업자료 공동 개발진'),
