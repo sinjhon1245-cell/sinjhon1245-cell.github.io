@@ -657,6 +657,52 @@ h1, h2, h3, p { margin: 0; }
   border-radius: 999px;
 }
 
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 48px;
+}
+
+.page-btn {
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+
+.page-btn:hover:not(:disabled):not(.active) { background: #ECECEC; }
+
+.page-btn.active {
+  background: var(--ink);
+  color: #FFFFFF;
+  cursor: default;
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 44px;
+  color: #666666;
+  user-select: none;
+}
+
 .no-results {
   border: 1px dashed var(--ink);
   border-radius: 16px;
@@ -685,6 +731,22 @@ h1, h2, h3, p { margin: 0; }
 
 .no-results .reset-link {
   font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .records-head { padding: 56px 20px 28px; }
+  .records-title { font-size: 34px; }
+  .filters { padding: 8px 20px 32px; }
+  .filter-group { grid-template-columns: 1fr; gap: 8px; }
+  .records-section { padding: 0 20px 72px; }
+
+  .records-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .pagination { gap: 6px; margin-top: 32px; }
+  .page-btn { padding: 0 12px; }
 }
 
 /* ───────── About page ───────── */
