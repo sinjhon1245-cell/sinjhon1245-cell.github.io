@@ -313,7 +313,21 @@ h1, h2, h3, p { margin: 0; }
   }
 
   .hero-media { max-width: 100%; margin-left: 0; }
-  .hero-frame { height: 220px; }
+
+  /* Mobile hero photo: fixed short heights used to crop the top of the
+     subject's head on narrow, wide-short frames. aspect-ratio keeps the
+     frame tall enough to show the whole head+shoulders for a same-height
+     (e.g. square) source photo, and object-position biases any leftover
+     crop toward the top so a differently-proportioned future upload still
+     favors the face over the torso. max-height keeps the frame from
+     growing unreasonably tall as this same rule reaches toward 768px. */
+  .hero-frame {
+    height: auto;
+    aspect-ratio: 4 / 5;
+    max-height: 480px;
+  }
+
+  .hero-frame img { object-position: 50% 20%; }
 
   .keyword-strip .wrap {
     grid-template-columns: repeat(2, 1fr);
@@ -328,8 +342,6 @@ h1, h2, h3, p { margin: 0; }
 }
 
 @media (max-width: 480px) {
-  .hero-frame { height: 190px; }
-
   .hero-actions {
     flex-direction: column;
     align-items: stretch;
