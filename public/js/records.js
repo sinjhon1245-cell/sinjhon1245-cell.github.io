@@ -10,10 +10,16 @@
   let allActivities = [];
   let currentPage = 1;
 
+  // Cards for all 29 activities are built up front, but only the current
+  // page's 6 <img> elements ever get a real src (assigned on demand by
+  // assignCardImage, called from render()) — the other pages' images are
+  // never requested until the user actually pages to them. data-src holds
+  // the intended URL until then; decoding is async either way so a large
+  // full-resolution photo never blocks the main thread while it decodes.
   function recordCardHtml(a) {
     const imageUrl = resolveActivityImage(a);
     const imageHtml = imageUrl
-      ? '<div class="img-frame rounded-14 record-frame"><img src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '"></div>'
+      ? '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>'
       : '';
     const description = (a.description || '').trim();
     const descHtml = description ? '<p class="record-desc">' + escHtml(description) + '</p>' : '';
@@ -103,6 +109,21 @@
     window.scrollTo({ top: top, behavior: reduceMotion ? 'auto' : 'smooth' });
   }
 
+  // Assigns the real image src the first time a card becomes part of the
+  // visible page (display is set before this runs, so native lazy loading
+  // can correctly see the element as laid out rather than display:none).
+  // isFirst gets eager + fetchpriority=high as the page's likely LCP image;
+  // the rest of the page's 6 images load lazily. Already-assigned cards
+  // (revisited pages) are left alone — checking the src attribute (not
+  // data-src) means a repeat visit is a no-op, not a re-fetch.
+  function assignCardImage(card, isFirst) {
+    const img = card.querySelector('img[data-src]');
+    if (!img || img.getAttribute('src')) return;
+    img.loading = isFirst ? 'eager' : 'lazy';
+    if (isFirst) img.setAttribute('fetchpriority', 'high');
+    img.src = img.dataset.src;
+  }
+
   function render(opts) {
     const scroll = !!(opts && opts.scroll);
 
@@ -118,10 +139,12 @@
     if (currentPage < 1) currentPage = 1;
 
     const start = (currentPage - 1) * ACTIVITIES_PER_PAGE;
-    const pageCards = new Set(matching.slice(start, start + ACTIVITIES_PER_PAGE));
+    const pageCardList = matching.slice(start, start + ACTIVITIES_PER_PAGE);
+    const pageCards = new Set(pageCardList);
     allCards.forEach((card) => {
       card.style.display = pageCards.has(card) ? '' : 'none';
     });
+    pageCardList.forEach((card, i) => assignCardImage(card, i === 0));
 
     if (countEl) {
       const isFiltered = active.year !== '전체' || active.field !== '전체';
