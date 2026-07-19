@@ -5,9 +5,13 @@
 
   function featuredCardHtml(a, index) {
     const num = String(index + 1).padStart(2, '0');
+    const imageUrl = resolveActivityImage(a);
+    const imageHtml = imageUrl
+      ? '<div class="img-frame featured-frame"><img src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '"></div>'
+      : '';
     return '' +
       '<article class="featured-card">' +
-        '<div class="img-frame featured-frame">' + imgFrameHtml(a.image_url, a.title, '대표 활동 사진 ' + (index + 1)) + '</div>' +
+        imageHtml +
         '<div class="featured-meta">' +
           '<span class="featured-num">' + num + '</span>' +
           '<span class="featured-when">' + escHtml(a.year) + ' · ' + escHtml(a.field) + '</span>' +

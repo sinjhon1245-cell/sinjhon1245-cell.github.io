@@ -5,3 +5,7 @@ Thumbs.db
 .env
 .env.local
 node_modules/
+
+# Raw AI-generated candidate photos — source material only, never served.
+# The curated, resized picks actually used live in public/images/activity-images/.
+public/images/activity-candidates/

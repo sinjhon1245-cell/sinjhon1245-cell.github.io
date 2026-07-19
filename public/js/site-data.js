@@ -143,6 +143,76 @@ function imgFrameHtml(imageUrl, alt, placeholderText) {
   return '<div class="img-placeholder" style="display:flex">' + escHtml(placeholderText) + '</div>';
 }
 
+// ── Activity representative images (public/images/activity-images) ──
+//
+// Curated by hand from a batch of candidate illustrations, matched to
+// specific activities by actual scene content (not filename). Matched by
+// title keyword rather than activity id: ids are re-issued whenever the
+// activities table is bulk-replaced, but a title is what an admin actually
+// reads and edits, so keyword matching survives an id change that would
+// silently break an id-keyed lookup.
+//
+// Resolution order, called once per activity when rendering a card:
+//   1. activity.image_url      — a real photo uploaded through admin.html
+//   2. ACTIVITY_IMAGE_BY_KEYWORD — a title substring matched to one curated image
+//   3. ACTIVITY_IMAGE_BY_FIELD   — a same-field fallback image
+//   4. null                     — no image; caller renders a text-only card
+//
+// Not every field has a fallback (e.g. 교육자료 개발) — none of the curated
+// candidates convincingly depicted solo material-development work, so
+// activities in that field intentionally fall through to a text-only card
+// instead of being paired with a loosely-related photo.
+const ACTIVITY_IMAGE_BASE = 'public/images/activity-images/';
+
+const ACTIVITY_IMAGE_BY_KEYWORD = [
+  { keyword: 'SW영재학급 운영', file: 'coding-robot-smart-classroom.png' },
+  { keyword: '디지털 기반 학교 컨설팅', file: 'consulting-ai-dashboard.png' },
+  { keyword: '교육실습 지도', file: 'mentoring-one-on-one-tablet.png' },
+  { keyword: '메이커스 캠프', file: 'coding-robot-maker.png' },
+  { keyword: '과학콘텐츠 분과', file: 'science-fair-booth-atom.png' },
+  { keyword: '스토리메이커', file: 'project-making-diorama.png' },
+  { keyword: 'AI융합교육 교사지원단', file: 'teacher-group-ai-brain.png' },
+  { keyword: 'Class-IT', file: 'consulting-classroom-window.png' },
+  { keyword: '과학토론캠프', file: 'science-fair-booth-planets.png' },
+  { keyword: '수업실천사례 추진단', file: 'consulting-data-dashboard.png' },
+  { keyword: '저경력 교사', file: 'mentoring-one-on-one-book.png' },
+  { keyword: '역량강화 연수', file: 'teacher-training-meeting.png' },
+  { keyword: 'SW영재학급 강사', file: 'coding-robot-stem-project.png' },
+  { keyword: '최첨단 교실', file: 'science-lab-sensor-experiment-2.png' },
+  { keyword: '디지털교육연구대회', file: 'teacher-group-ai-robot.png' },
+  { keyword: '팀 선도교원', file: 'teacher-group-casual-meeting.png' },
+  { keyword: '발명교육지원단', file: 'teacher-training-presentation.png' },
+  { keyword: '구축·활용 컨설팅', file: 'science-lab-sensor-experiment.png' },
+  { keyword: '지능형 과학실 활용 교원', file: 'science-lab-sensor-experiment.png' },
+  { keyword: '성과공유회', file: 'teacher-group-ai-network.png' },
+  { keyword: '자연관찰 탐구교실', file: 'science-lab-sensor-experiment.png' },
+  { keyword: '가족공동과학캠프', file: 'science-fair-booth-space.png' },
+  { keyword: '단위학교 SW영재학급', file: 'coding-robot-block-coding.png' },
+  { keyword: '분과 기획 및 운영', file: 'science-fair-booth-atom.png' },
+  { keyword: 'AI선도학교 프로그램', file: 'coding-robot-kit.png' }
+];
+
+const ACTIVITY_IMAGE_BY_FIELD = {
+  'AI·SW교육': 'coding-robot-smart-classroom.png',
+  '과학·융합교육': 'science-lab-sensor-experiment.png',
+  '프로젝트형 수업': 'project-making-diorama.png',
+  '디지털 기반 수업혁신': 'digital-classroom-tablet.png',
+  '교사 연수': 'teacher-training-meeting.png'
+};
+
+function resolveActivityImage(activity) {
+  if (activity.image_url) return activity.image_url;
+
+  const title = activity.title || '';
+  const byKeyword = ACTIVITY_IMAGE_BY_KEYWORD.find((entry) => title.indexOf(entry.keyword) !== -1);
+  if (byKeyword) return ACTIVITY_IMAGE_BASE + byKeyword.file;
+
+  const byField = ACTIVITY_IMAGE_BY_FIELD[activity.field];
+  if (byField) return ACTIVITY_IMAGE_BASE + byField;
+
+  return null;
+}
+
 // Overrides a static local <img> (hero photo, about portrait) with a live
 // URL from settings, if one has been uploaded through the admin page.
 function applyRemoteImage(imgId, url) {

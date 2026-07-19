@@ -11,9 +11,13 @@
   let currentPage = 1;
 
   function recordCardHtml(a) {
+    const imageUrl = resolveActivityImage(a);
+    const imageHtml = imageUrl
+      ? '<div class="img-frame rounded-14 record-frame"><img src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '"></div>'
+      : '';
     return '' +
       '<article class="record-card" data-year="' + escHtml(a.year) + '" data-field="' + escHtml(a.field) + '">' +
-        '<div class="img-frame rounded-14 record-frame">' + imgFrameHtml(a.image_url, a.title, '활동 사진') + '</div>' +
+        imageHtml +
         '<div class="record-meta">' +
           '<span class="record-year">' + escHtml(a.year) + '</span><span>·</span><span>' + escHtml(a.type) + '</span><span>·</span><span>' + escHtml(a.role) + '</span>' +
         '</div>' +
