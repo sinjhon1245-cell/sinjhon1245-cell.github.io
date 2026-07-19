@@ -5,10 +5,14 @@
 
   function featuredCardHtml(a, index) {
     const num = String(index + 1).padStart(2, '0');
-    const imageUrl = resolveActivityImage(a);
-    const imageHtml = imageUrl
-      ? '<div class="img-frame featured-frame"><img src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '"></div>'
-      : '';
+    const imageResult = resolveActivityImage(a);
+    let imageHtml = '';
+    if (imageResult && imageResult.type === 'single') {
+      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.url) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    } else if (imageResult) {
+      const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
+      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.src960) + '" srcset="' + srcset + '" sizes="(max-width: 768px) calc(100vw - 40px), 50vw" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    }
     return '' +
       '<article class="featured-card">' +
         imageHtml +

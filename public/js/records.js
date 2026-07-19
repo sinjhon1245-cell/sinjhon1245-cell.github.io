@@ -10,17 +10,29 @@
   let allActivities = [];
   let currentPage = 1;
 
+  // Matches .records-grid's actual layout: 1 column with ~20px side
+  // padding at ≤768px, a 3-column grid inside a 1200px-capped, 40px-padded
+  // wrap above that (so each column trends toward a fixed ~355px once the
+  // wrap hits its max-width, and roughly 30% of viewport width below it).
+  const RECORD_IMAGE_SIZES = '(max-width: 768px) calc(100vw - 40px), (max-width: 1200px) 30vw, 355px';
+
   // Cards for all 29 activities are built up front, but only the current
-  // page's 6 <img> elements ever get a real src (assigned on demand by
+  // page's 6 <img> elements ever get real src/srcset (assigned on demand by
   // assignCardImage, called from render()) — the other pages' images are
-  // never requested until the user actually pages to them. data-src holds
-  // the intended URL until then; decoding is async either way so a large
-  // full-resolution photo never blocks the main thread while it decodes.
+  // never requested until the user actually pages to them. data-src/
+  // data-srcset/data-sizes hold the intended values until then; decoding is
+  // async either way so a large photo never blocks the main thread while it
+  // decodes. A real admin-uploaded photo (image_url) has only the one size
+  // it was uploaded at, so it gets a plain data-src with no srcset.
   function recordCardHtml(a) {
-    const imageUrl = resolveActivityImage(a);
-    const imageHtml = imageUrl
-      ? '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>'
-      : '';
+    const imageResult = resolveActivityImage(a);
+    let imageHtml = '';
+    if (imageResult && imageResult.type === 'single') {
+      imageHtml = '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageResult.url) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    } else if (imageResult) {
+      const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
+      imageHtml = '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageResult.src960) + '" data-srcset="' + srcset + '" data-sizes="' + escHtml(RECORD_IMAGE_SIZES) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    }
     const description = (a.description || '').trim();
     const descHtml = description ? '<p class="record-desc">' + escHtml(description) + '</p>' : '';
     return '' +
@@ -109,18 +121,32 @@
     window.scrollTo({ top: top, behavior: reduceMotion ? 'auto' : 'smooth' });
   }
 
-  // Assigns the real image src the first time a card becomes part of the
-  // visible page (display is set before this runs, so native lazy loading
-  // can correctly see the element as laid out rather than display:none).
-  // isFirst gets eager + fetchpriority=high as the page's likely LCP image;
-  // the rest of the page's 6 images load lazily. Already-assigned cards
-  // (revisited pages) are left alone — checking the src attribute (not
-  // data-src) means a repeat visit is a no-op, not a re-fetch.
-  function assignCardImage(card, isFirst) {
+  // Assigns the real image src/srcset/sizes the first time a card becomes
+  // part of the visible page (display is set before this runs, so native
+  // lazy loading can correctly see the element as laid out rather than
+  // display:none). Whether a card actually falls within the first screen is
+  // measured, not assumed — desktop's 3-column row and mobile's 1-column
+  // stack put a different number of the page's 6 cards above the fold, so a
+  // fixed count would either waste eager-loading priority on offscreen
+  // images or miss ones the user can already see. Only the first on-screen
+  // card also gets fetchpriority=high, as the page's likely LCP image.
+  // Already-assigned cards (revisited pages) are left alone — checking the
+  // src attribute (not data-src) means a repeat visit is a no-op, not a
+  // re-fetch.
+  function assignCardImage(card, isFirstOfPage) {
     const img = card.querySelector('img[data-src]');
     if (!img || img.getAttribute('src')) return;
-    img.loading = isFirst ? 'eager' : 'lazy';
-    if (isFirst) img.setAttribute('fetchpriority', 'high');
+
+    const rect = card.getBoundingClientRect();
+    const onFirstScreen = rect.top < window.innerHeight && rect.bottom > 0;
+
+    img.loading = onFirstScreen ? 'eager' : 'lazy';
+    if (onFirstScreen && isFirstOfPage) img.setAttribute('fetchpriority', 'high');
+
+    const sizes = img.getAttribute('data-sizes');
+    if (sizes) img.setAttribute('sizes', sizes);
+    const srcset = img.getAttribute('data-srcset');
+    if (srcset) img.setAttribute('srcset', srcset);
     img.src = img.dataset.src;
   }
 
