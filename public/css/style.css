@@ -812,9 +812,10 @@ h1, h2, h3, p { margin: 0; }
 }
 
 .record-desc {
-  font-size: 14.5px;
-  line-height: 1.65;
+  font-size: 15px;
+  line-height: 1.6;
   color: #333333;
+  white-space: pre-line;
 }
 
 .record-tags {

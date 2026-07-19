@@ -15,6 +15,8 @@
     const imageHtml = imageUrl
       ? '<div class="img-frame rounded-14 record-frame"><img src="' + escHtml(imageUrl) + '" alt="' + escHtml(a.title) + '"></div>'
       : '';
+    const description = (a.description || '').trim();
+    const descHtml = description ? '<p class="record-desc">' + escHtml(description) + '</p>' : '';
     return '' +
       '<article class="record-card" data-year="' + escHtml(a.year) + '" data-field="' + escHtml(a.field) + '">' +
         imageHtml +
@@ -23,6 +25,7 @@
         '</div>' +
         '<h3>' + escHtml(a.title) + '</h3>' +
         '<div class="record-tags"><span class="record-field">' + escHtml(a.field) + '</span></div>' +
+        descHtml +
       '</article>';
   }
 
