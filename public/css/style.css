@@ -440,6 +440,7 @@ h1, h2, h3, p { margin: 0; }
   font-size: 15px;
   line-height: 1.7;
   color: #333333;
+  white-space: pre-line;
 }
 
 @media (max-width: 768px) {
