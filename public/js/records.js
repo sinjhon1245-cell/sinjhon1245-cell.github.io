@@ -10,27 +10,40 @@
   let allActivities = [];
   let currentPage = 1;
 
-  // Cards for all activities are built up front, but only the current
-  // page's 6 <img> elements ever get a real src (assigned on demand by
-  // assignCardImage, called from render()) — the other pages' images are
-  // never requested until the user actually pages to them. data-src holds the
-  // intended URL until then; decoding is async either way so a large photo
-  // never blocks the main thread. Both a real admin-uploaded photo and a
-  // field default thumbnail are a single image (no responsive srcset).
+  // Matches .records-grid's actual layout for the curated images' srcset: 1
+  // column with ~20px side padding at ≤768px, a 3-column grid inside a
+  // 1200px-capped, 40px-padded wrap above that (each column trends toward a
+  // fixed ~355px once the wrap hits its max-width, ~30% of viewport below it).
+  const RECORD_IMAGE_SIZES = '(max-width: 768px) calc(100vw - 40px), (max-width: 1200px) 30vw, 355px';
+
+  // Cards for all activities are built up front, but only the current page's 6
+  // <img> elements ever get a real src/srcset (assigned on demand by
+  // assignCardImage from render()) — other pages' images aren't requested
+  // until paged to. data-src/data-srcset/data-sizes hold the intended values
+  // until then. A real admin photo and a field default are single images; a
+  // curated illustration ships in two sizes, so only it gets a srcset.
   function recordCardHtml(a) {
     const imageResult = resolveActivityImage(a);
     let imageHtml = '';
     if (imageResult) {
-      // A real photo keeps its uploaded alt (the activity title); a default
-      // thumbnail is purely decorative, so alt="" + aria-hidden. Both carry
-      // data-field so handleActivityImageError can fall back to the field
-      // default if the image (a real photo, most likely) fails to load.
+      // Real photo / curated illustration keep the activity title as alt; a
+      // default thumbnail is purely decorative (alt="" + aria-hidden). All
+      // carry data-field so handleActivityImageError can fall back to the
+      // field default if the image fails to load.
       const isDefault = imageResult.type === 'default';
       const alt = isDefault ? '' : escHtml(a.title);
       const frameClass = 'img-frame rounded-14 record-frame' + (isDefault ? ' is-default-thumb' : '');
-      imageHtml = '<div class="' + frameClass + '"><img data-src="' + escHtml(imageResult.url) +
-        '" alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
-        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"></div>';
+      const common = ' alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
+        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"';
+      let imgTag;
+      if (imageResult.type === 'curated') {
+        const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
+        imgTag = '<img data-src="' + escHtml(imageResult.src960) + '" data-srcset="' + srcset +
+          '" data-sizes="' + escHtml(RECORD_IMAGE_SIZES) + '"' + common + '>';
+      } else {
+        imgTag = '<img data-src="' + escHtml(imageResult.url) + '"' + common + '>';
+      }
+      imageHtml = '<div class="' + frameClass + '">' + imgTag + '</div>';
     }
     const description = (a.description || '').trim();
     const descHtml = description ? '<p class="record-desc">' + escHtml(description) + '</p>' : '';

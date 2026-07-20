@@ -259,20 +259,96 @@ function getActivityDefaultImage(field) {
   return file ? ACTIVITY_DEFAULT_IMAGE_BASE + file : null;
 }
 
-// Decides what a single activity card should show, in strict priority order:
-//   1. { type: 'real' }    — a real admin-uploaded photo. image_url counts as
+// ── Curated activity images (public/images/activity-images) ──
+//
+// A pool of hand-picked illustrations matched to specific activities by actual
+// scene content. This is the SECOND tier — used only for an activity that has
+// no real uploaded photo, and always PREFERRED over the plain field default so
+// a photo-less activity gets a fitting image instead of a generic placeholder.
+//
+// Matched by title keyword rather than activity id (ids are re-issued whenever
+// the activities table is bulk-replaced, but a title is what an admin actually
+// reads and edits, so keyword matching survives an id change). ACTIVITY_IMAGE_
+// BY_FIELD is a coarser same-field net for a photo-less activity whose title
+// matched no keyword. 교육자료 개발 intentionally has no curated field entry —
+// none of the curated scenes depict material-development work — so those fall
+// through to the 교육자료 개발 default thumbnail instead of a loosely-related photo.
+//
+// Curated images ship as two WebP sizes per base name ("<base>-960.webp" and
+// "<base>-1600.webp"); callers build srcset/sizes from src960/src1600.
+const ACTIVITY_IMAGE_BASE = 'public/images/activity-images/';
+
+const ACTIVITY_IMAGE_BY_KEYWORD = [
+  { keyword: 'SW영재학급 운영', base: 'coding-robot-smart-classroom' },
+  { keyword: '디지털 기반 학교 컨설팅', base: 'consulting-ai-dashboard' },
+  { keyword: '교육실습 지도', base: 'mentoring-one-on-one-tablet' },
+  { keyword: '메이커스 캠프', base: 'coding-robot-maker' },
+  { keyword: '과학콘텐츠 분과', base: 'science-fair-booth-atom' },
+  { keyword: '스토리메이커', base: 'project-making-diorama' },
+  { keyword: 'AI융합교육 교사지원단', base: 'teacher-group-ai-brain' },
+  { keyword: 'Class-IT', base: 'consulting-classroom-window' },
+  { keyword: '과학토론캠프', base: 'science-fair-booth-planets' },
+  { keyword: '수업실천사례 추진단', base: 'consulting-data-dashboard' },
+  { keyword: '저경력 교사', base: 'mentoring-one-on-one-book' },
+  { keyword: '역량강화 연수', base: 'teacher-training-meeting' },
+  { keyword: 'SW영재학급 강사', base: 'coding-robot-stem-project' },
+  { keyword: '최첨단 교실', base: 'science-lab-sensor-experiment-2' },
+  { keyword: '디지털교육연구대회', base: 'teacher-group-ai-robot' },
+  { keyword: '팀 선도교원', base: 'teacher-group-casual-meeting' },
+  { keyword: '발명교육지원단', base: 'teacher-training-presentation' },
+  { keyword: '구축·활용 컨설팅', base: 'science-lab-sensor-experiment' },
+  { keyword: '지능형 과학실 활용 교원', base: 'science-lab-sensor-experiment' },
+  { keyword: '성과공유회', base: 'teacher-group-ai-network' },
+  { keyword: '자연관찰 탐구교실', base: 'science-lab-sensor-experiment' },
+  { keyword: '가족공동과학캠프', base: 'science-fair-booth-space' },
+  { keyword: '단위학교 SW영재학급', base: 'coding-robot-block-coding' },
+  { keyword: '분과 기획 및 운영', base: 'science-fair-booth-atom' },
+  { keyword: 'AI선도학교 프로그램', base: 'coding-robot-kit' }
+];
+
+const ACTIVITY_IMAGE_BY_FIELD = {
+  'AI·SW교육': 'coding-robot-smart-classroom',
+  '과학·융합교육': 'science-lab-sensor-experiment',
+  '프로젝트형 수업': 'project-making-diorama',
+  '디지털 기반 수업혁신': 'digital-classroom-tablet',
+  '교사 연수': 'teacher-training-meeting'
+};
+
+function responsiveActivityImage(base) {
+  return {
+    type: 'curated',
+    src960: ACTIVITY_IMAGE_BASE + base + '-960.webp',
+    src1600: ACTIVITY_IMAGE_BASE + base + '-1600.webp'
+  };
+}
+
+// Decides what a single activity card should show, in strict priority order —
+// a fitting image is always preferred, and the field default is only a last
+// resort, NOT a blanket replacement:
+//   1. { type: 'real' }     — a real admin-uploaded photo. image_url counts as
 //      "present" only when it is a non-empty string after trimming; null,
 //      undefined, "" and whitespace-only all count as "no photo".
-//   2. { type: 'default' } — the field's default thumbnail (exact-field match).
-//   3. null                — no <img> at all; the caller lets .img-frame's own
+//   2. { type: 'curated' }  — a hand-matched illustration from the curated pool:
+//      first by title keyword, then a coarser same-field match.
+//   3. { type: 'default' }  — the field's default thumbnail, used only when the
+//      curated pool has nothing fitting for this activity.
+//   4. null                 — no <img> at all; the caller lets .img-frame's own
 //      CSS background show.
-// A real photo is ALWAYS preferred here and is never pre-empted by a default;
-// the only way a default replaces a real photo is later, at runtime, if that
-// real photo actually fails to load (see handleActivityImageError).
+// A real photo (and, failing that, a curated match) is ALWAYS preferred here;
+// a default never pre-empts either. The only way a default replaces a real or
+// curated image is later, at runtime, if that image actually fails to load
+// (see handleActivityImageError).
 function resolveActivityImage(activity) {
   const raw = activity && activity.image_url;
   const url = (typeof raw === 'string') ? raw.trim() : '';
   if (url) return { type: 'real', url: raw };
+
+  const title = (activity && activity.title) || '';
+  const byKeyword = ACTIVITY_IMAGE_BY_KEYWORD.find((entry) => title.indexOf(entry.keyword) !== -1);
+  if (byKeyword) return responsiveActivityImage(byKeyword.base);
+
+  const byField = ACTIVITY_IMAGE_BY_FIELD[activity && activity.field];
+  if (byField) return responsiveActivityImage(byField);
 
   const defaultUrl = getActivityDefaultImage(activity && activity.field);
   if (defaultUrl) return { type: 'default', url: defaultUrl };
@@ -280,12 +356,13 @@ function resolveActivityImage(activity) {
   return null;
 }
 
-// Shared inline onerror handler for every activity <img> (real photo OR
-// default thumbnail) across records / home / admin. A real photo that fails to
-// load — deleted Storage file, bad URL, network error, or a decode failure —
-// is swapped exactly once to its field default; if that default ALSO fails to
-// load (or the field has none), the <img> is removed so the frame's plain CSS
-// background shows, instead of looping forever or leaving a broken-image icon.
+// Shared inline onerror handler for every activity <img> (real photo, curated
+// illustration, OR default thumbnail) across records / home / admin. An image
+// that fails to load — deleted Storage file, bad URL, network error, or a
+// decode failure — is swapped exactly once to its field default; if that
+// default ALSO fails to load (or the field has none), the <img> is removed so
+// the frame's plain CSS background shows, instead of looping forever or
+// leaving a broken-image icon.
 // Reads the field from data-field (the caller sets it) because this is wired
 // up as a plain inline onerror="" string rather than a closure.
 function handleActivityImageError(img) {

@@ -308,18 +308,18 @@ function isImagePathStillReferenced(path, excludeActivityId) {
 
 let currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
 
-// The small list thumbnail follows the exact same real-photo → field-default
-// → nothing priority as the public cards (resolveActivityImage, site-data.js),
-// so a photo-less activity shows its field's default thumbnail here too
-// instead of the old empty beige square. The thumb is decorative in this
-// admin list (alt=""), and data-field lets a broken real photo fall back to
-// the field default via the shared onerror handler.
+// The small list thumbnail follows the exact same real-photo → curated match →
+// field-default → nothing priority as the public cards (resolveActivityImage,
+// site-data.js), so the admin list and the public records page always agree on
+// what a given activity shows. The thumb is decorative in this admin list
+// (alt=""); a curated image uses its smaller 960 size at this tiny size, and
+// data-field lets a broken image fall back to the field default via the shared
+// onerror handler.
 function activityThumbHtml(a) {
   const imageResult = resolveActivityImage(a);
-  if (imageResult) {
-    return `<img class="mgmt-row-thumb" src="${escHtml(imageResult.url)}" alt="" aria-hidden="true" data-field="${escHtml(a.field)}" onerror="handleActivityImageError(this)">`;
-  }
-  return `<div class="mgmt-row-thumb-placeholder"></div>`;
+  if (!imageResult) return `<div class="mgmt-row-thumb-placeholder"></div>`;
+  const src = imageResult.type === 'curated' ? imageResult.src960 : imageResult.url;
+  return `<img class="mgmt-row-thumb" src="${escHtml(src)}" alt="" aria-hidden="true" data-field="${escHtml(a.field)}" onerror="handleActivityImageError(this)">`;
 }
 
 // One activity row inside a year group. The left side carries the reorder

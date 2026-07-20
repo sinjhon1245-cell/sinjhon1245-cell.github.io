@@ -8,15 +8,23 @@
     const imageResult = resolveActivityImage(a);
     let imageHtml = '';
     if (imageResult) {
-      // Real photo keeps the activity title as alt; a default thumbnail is
-      // decorative (alt="" + aria-hidden). data-field lets a failed real
-      // photo fall back to its field default via handleActivityImageError.
+      // Real photo / curated illustration keep the activity title as alt; a
+      // default thumbnail is decorative (alt="" + aria-hidden). data-field lets
+      // a failed image fall back to its field default (handleActivityImageError).
       const isDefault = imageResult.type === 'default';
       const alt = isDefault ? '' : escHtml(a.title);
       const frameClass = 'img-frame featured-frame' + (isDefault ? ' is-default-thumb' : '');
-      imageHtml = '<div class="' + frameClass + '"><img src="' + escHtml(imageResult.url) +
-        '" alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
-        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"></div>';
+      const common = ' alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
+        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"';
+      let imgTag;
+      if (imageResult.type === 'curated') {
+        const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
+        imgTag = '<img src="' + escHtml(imageResult.src960) + '" srcset="' + srcset +
+          '" sizes="(max-width: 768px) calc(100vw - 40px), 50vw"' + common + '>';
+      } else {
+        imgTag = '<img src="' + escHtml(imageResult.url) + '"' + common + '>';
+      }
+      imageHtml = '<div class="' + frameClass + '">' + imgTag + '</div>';
     }
     return '' +
       '<article class="featured-card">' +
