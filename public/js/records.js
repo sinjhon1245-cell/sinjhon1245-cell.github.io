@@ -10,28 +10,27 @@
   let allActivities = [];
   let currentPage = 1;
 
-  // Matches .records-grid's actual layout: 1 column with ~20px side
-  // padding at ≤768px, a 3-column grid inside a 1200px-capped, 40px-padded
-  // wrap above that (so each column trends toward a fixed ~355px once the
-  // wrap hits its max-width, and roughly 30% of viewport width below it).
-  const RECORD_IMAGE_SIZES = '(max-width: 768px) calc(100vw - 40px), (max-width: 1200px) 30vw, 355px';
-
-  // Cards for all 29 activities are built up front, but only the current
-  // page's 6 <img> elements ever get real src/srcset (assigned on demand by
+  // Cards for all activities are built up front, but only the current
+  // page's 6 <img> elements ever get a real src (assigned on demand by
   // assignCardImage, called from render()) — the other pages' images are
-  // never requested until the user actually pages to them. data-src/
-  // data-srcset/data-sizes hold the intended values until then; decoding is
-  // async either way so a large photo never blocks the main thread while it
-  // decodes. A real admin-uploaded photo (image_url) has only the one size
-  // it was uploaded at, so it gets a plain data-src with no srcset.
+  // never requested until the user actually pages to them. data-src holds the
+  // intended URL until then; decoding is async either way so a large photo
+  // never blocks the main thread. Both a real admin-uploaded photo and a
+  // field default thumbnail are a single image (no responsive srcset).
   function recordCardHtml(a) {
     const imageResult = resolveActivityImage(a);
     let imageHtml = '';
-    if (imageResult && imageResult.type === 'single') {
-      imageHtml = '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageResult.url) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
-    } else if (imageResult) {
-      const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
-      imageHtml = '<div class="img-frame rounded-14 record-frame"><img data-src="' + escHtml(imageResult.src960) + '" data-srcset="' + srcset + '" data-sizes="' + escHtml(RECORD_IMAGE_SIZES) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    if (imageResult) {
+      // A real photo keeps its uploaded alt (the activity title); a default
+      // thumbnail is purely decorative, so alt="" + aria-hidden. Both carry
+      // data-field so handleActivityImageError can fall back to the field
+      // default if the image (a real photo, most likely) fails to load.
+      const isDefault = imageResult.type === 'default';
+      const alt = isDefault ? '' : escHtml(a.title);
+      const frameClass = 'img-frame rounded-14 record-frame' + (isDefault ? ' is-default-thumb' : '');
+      imageHtml = '<div class="' + frameClass + '"><img data-src="' + escHtml(imageResult.url) +
+        '" alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
+        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"></div>';
     }
     const description = (a.description || '').trim();
     const descHtml = description ? '<p class="record-desc">' + escHtml(description) + '</p>' : '';
@@ -183,8 +182,20 @@
     if (noResultsEl) noResultsEl.style.display = totalMatching > 0 ? 'none' : 'flex';
 
     renderPagination(totalPages);
+    updateResetState();
 
     if (scroll) scrollToRecordsTop();
+  }
+
+  // "필터 초기화" is only meaningful when at least one filter is narrowed —
+  // when everything is on 전체 it's disabled and visually quiet, and it
+  // brightens the moment a year or field filter is active.
+  function updateResetState() {
+    const hasActiveFilter = active.year !== '전체' || active.field !== '전체';
+    document.querySelectorAll('.filter-reset').forEach((btn) => {
+      btn.disabled = !hasActiveFilter;
+      btn.classList.toggle('is-active', hasActiveFilter);
+    });
   }
 
   function goToPage(page) {
@@ -210,7 +221,9 @@
       });
     });
 
-    document.querySelectorAll('.reset-link').forEach((link) => {
+    // Both the in-filter "필터 초기화" capsule and the one inside the empty
+    // "결과 없음" state clear year + field back to 전체 and return to page 1.
+    document.querySelectorAll('.reset-link, .filter-reset').forEach((link) => {
       link.addEventListener('click', () => {
         active.year = '전체';
         active.field = '전체';
@@ -245,7 +258,10 @@
       if (introEl) introEl.textContent = getSiteCopy(data.settings, 'records_page_description');
       applyGlobalSiteCopy(data.settings);
 
-      allActivities = data.activities.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      // Canonical order shared with the admin list (site-data.js): year
+      // descending, then the admin-controlled sort_order ascending within a
+      // year, then created_at / id as tiebreakers.
+      allActivities = sortActivitiesForDisplay(data.activities);
       grid.innerHTML = allActivities.map(recordCardHtml).join('');
       render();
     } catch (err) {

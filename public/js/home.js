@@ -7,11 +7,16 @@
     const num = String(index + 1).padStart(2, '0');
     const imageResult = resolveActivityImage(a);
     let imageHtml = '';
-    if (imageResult && imageResult.type === 'single') {
-      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.url) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
-    } else if (imageResult) {
-      const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
-      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.src960) + '" srcset="' + srcset + '" sizes="(max-width: 768px) calc(100vw - 40px), 50vw" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    if (imageResult) {
+      // Real photo keeps the activity title as alt; a default thumbnail is
+      // decorative (alt="" + aria-hidden). data-field lets a failed real
+      // photo fall back to its field default via handleActivityImageError.
+      const isDefault = imageResult.type === 'default';
+      const alt = isDefault ? '' : escHtml(a.title);
+      const frameClass = 'img-frame featured-frame' + (isDefault ? ' is-default-thumb' : '');
+      imageHtml = '<div class="' + frameClass + '"><img src="' + escHtml(imageResult.url) +
+        '" alt="' + alt + '" data-field="' + escHtml(a.field) + '" decoding="async"' +
+        (isDefault ? ' aria-hidden="true"' : '') + ' onerror="handleActivityImageError(this)"></div>';
     }
     return '' +
       '<article class="featured-card">' +

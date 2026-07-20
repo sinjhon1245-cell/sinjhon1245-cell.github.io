@@ -804,6 +804,47 @@ h1, h2, h3, p { margin: 0; }
   background: none;
 }
 
+/* "필터 초기화" capsule inside the filter block — same rounded, black-bordered
+   pill language as the chips, on the right edge of the filter area. Quiet and
+   disabled while everything is on 전체, and it brightens once a filter is
+   actually applied (records.js toggles disabled + .is-active). */
+.filter-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: #FFFFFF;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.filter-reset-icon { flex-shrink: 0; }
+
+.filter-reset:hover:not(:disabled) { background: var(--ink); color: #FFFFFF; }
+
+.filter-reset:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.filter-reset:disabled {
+  cursor: default;
+  opacity: 0.45;
+  border-color: #C7C4B8;
+}
+
+/* Default (field) thumbnails are decorative illustrations — keep them centered
+   in the same fixed-height frame as real photos so the card size never changes
+   whether an activity has a real photo or a placeholder. */
+.img-frame.is-default-thumb img { object-position: center; }
+
 .records-section {
   padding: 0 40px 110px;
 }

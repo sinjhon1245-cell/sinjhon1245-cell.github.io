@@ -225,90 +225,115 @@ function imgFrameHtml(imageUrl, alt, placeholderText) {
   return '<div class="img-placeholder" style="display:flex">' + escHtml(placeholderText) + '</div>';
 }
 
-// ── Activity representative images (public/images/activity-images) ──
+// ── Activity default thumbnails (public/images/activity-default) ──
 //
-// Curated by hand from a batch of candidate illustrations, matched to
-// specific activities by actual scene content (not filename). Matched by
-// title keyword rather than activity id: ids are re-issued whenever the
-// activities table is bulk-replaced, but a title is what an admin actually
-// reads and edits, so keyword matching survives an id change that would
-// silently break an id-keyed lookup.
+// Decorative placeholders shown ONLY for an activity that has no real
+// uploaded photo. The mapping is a single exact-match lookup of activity.field
+// against the six official field names — never a title keyword or any
+// partial/substring/fuzzy match — so it stays completely predictable and can
+// never pair a thumbnail with an unrelated activity. A field that isn't one of
+// the six (or is blank) yields no thumbnail, and the caller simply lets the
+// .img-frame's own CSS background show through as the plain common fallback.
 //
-// Resolution order, called once per activity when rendering a card:
-//   1. activity.image_url      — a real photo uploaded through admin.html
-//   2. ACTIVITY_IMAGE_BY_KEYWORD — a title substring matched to one curated image
-//   3. ACTIVITY_IMAGE_BY_FIELD   — a same-field fallback image
-//   4. null                     — no image; caller renders a text-only card
-//
-// Not every field has a fallback (e.g. 교육자료 개발) — none of the curated
-// candidates convincingly depicted solo material-development work, so
-// activities in that field intentionally fall through to a text-only card
-// instead of being paired with a loosely-related photo.
-//
-// Curated images ship as two WebP sizes per base name (each converted once
-// from the PNG master in public/images/activity-candidates, never from a
-// previously-downsized file): "<base>-960.webp" for narrow/standard-density
-// screens and "<base>-1600.webp" for wide/high-density ones. Callers build
-// srcset/sizes from src960/src1600 rather than picking one — a real
-// admin-uploaded photo (image_url) has only the one size it was uploaded
-// at, so that case returns a plain url with no responsive variants.
-const ACTIVITY_IMAGE_BASE = 'public/images/activity-images/';
+// These files are NOT activity photos and their paths are never written back
+// to the database: the choice happens purely at render time. The mapping lives
+// here in exactly one place and is consumed identically by the public records
+// page, the home featured cards, and the admin activity list.
+const ACTIVITY_DEFAULT_IMAGE_BASE = 'public/images/activity-default/';
 
-const ACTIVITY_IMAGE_BY_KEYWORD = [
-  { keyword: 'SW영재학급 운영', base: 'coding-robot-smart-classroom' },
-  { keyword: '디지털 기반 학교 컨설팅', base: 'consulting-ai-dashboard' },
-  { keyword: '교육실습 지도', base: 'mentoring-one-on-one-tablet' },
-  { keyword: '메이커스 캠프', base: 'coding-robot-maker' },
-  { keyword: '과학콘텐츠 분과', base: 'science-fair-booth-atom' },
-  { keyword: '스토리메이커', base: 'project-making-diorama' },
-  { keyword: 'AI융합교육 교사지원단', base: 'teacher-group-ai-brain' },
-  { keyword: 'Class-IT', base: 'consulting-classroom-window' },
-  { keyword: '과학토론캠프', base: 'science-fair-booth-planets' },
-  { keyword: '수업실천사례 추진단', base: 'consulting-data-dashboard' },
-  { keyword: '저경력 교사', base: 'mentoring-one-on-one-book' },
-  { keyword: '역량강화 연수', base: 'teacher-training-meeting' },
-  { keyword: 'SW영재학급 강사', base: 'coding-robot-stem-project' },
-  { keyword: '최첨단 교실', base: 'science-lab-sensor-experiment-2' },
-  { keyword: '디지털교육연구대회', base: 'teacher-group-ai-robot' },
-  { keyword: '팀 선도교원', base: 'teacher-group-casual-meeting' },
-  { keyword: '발명교육지원단', base: 'teacher-training-presentation' },
-  { keyword: '구축·활용 컨설팅', base: 'science-lab-sensor-experiment' },
-  { keyword: '지능형 과학실 활용 교원', base: 'science-lab-sensor-experiment' },
-  { keyword: '성과공유회', base: 'teacher-group-ai-network' },
-  { keyword: '자연관찰 탐구교실', base: 'science-lab-sensor-experiment' },
-  { keyword: '가족공동과학캠프', base: 'science-fair-booth-space' },
-  { keyword: '단위학교 SW영재학급', base: 'coding-robot-block-coding' },
-  { keyword: '분과 기획 및 운영', base: 'science-fair-booth-atom' },
-  { keyword: 'AI선도학교 프로그램', base: 'coding-robot-kit' }
-];
-
-const ACTIVITY_IMAGE_BY_FIELD = {
-  'AI·SW교육': 'coding-robot-smart-classroom',
-  '과학·융합교육': 'science-lab-sensor-experiment',
-  '프로젝트형 수업': 'project-making-diorama',
-  '디지털 기반 수업혁신': 'digital-classroom-tablet',
-  '교사 연수': 'teacher-training-meeting'
+const ACTIVITY_DEFAULT_IMAGES = {
+  'AI·SW교육': 'activity-ai-sw.png',
+  '과학·융합교육': 'activity-science.png',
+  '프로젝트형 수업': 'activity-project.png',
+  '디지털 기반 수업혁신': 'activity-digital.png',
+  '교사 연수': 'activity-training.png',
+  '교육자료 개발': 'activity-materials.png'
 };
 
-function responsiveActivityImage(base) {
-  return {
-    type: 'responsive',
-    src960: ACTIVITY_IMAGE_BASE + base + '-960.webp',
-    src1600: ACTIVITY_IMAGE_BASE + base + '-1600.webp'
-  };
+// Trims surrounding whitespace off the field before matching (so " 교사 연수 "
+// still resolves) but does no partial/substring matching beyond that exact
+// lookup. Returns null when the field isn't one of the six official names.
+function getActivityDefaultImage(field) {
+  const trimmed = (field == null ? '' : String(field)).trim();
+  const file = ACTIVITY_DEFAULT_IMAGES[trimmed];
+  return file ? ACTIVITY_DEFAULT_IMAGE_BASE + file : null;
 }
 
+// Decides what a single activity card should show, in strict priority order:
+//   1. { type: 'real' }    — a real admin-uploaded photo. image_url counts as
+//      "present" only when it is a non-empty string after trimming; null,
+//      undefined, "" and whitespace-only all count as "no photo".
+//   2. { type: 'default' } — the field's default thumbnail (exact-field match).
+//   3. null                — no <img> at all; the caller lets .img-frame's own
+//      CSS background show.
+// A real photo is ALWAYS preferred here and is never pre-empted by a default;
+// the only way a default replaces a real photo is later, at runtime, if that
+// real photo actually fails to load (see handleActivityImageError).
 function resolveActivityImage(activity) {
-  if (activity.image_url) return { type: 'single', url: activity.image_url };
+  const raw = activity && activity.image_url;
+  const url = (typeof raw === 'string') ? raw.trim() : '';
+  if (url) return { type: 'real', url: raw };
 
-  const title = activity.title || '';
-  const byKeyword = ACTIVITY_IMAGE_BY_KEYWORD.find((entry) => title.indexOf(entry.keyword) !== -1);
-  if (byKeyword) return responsiveActivityImage(byKeyword.base);
-
-  const byField = ACTIVITY_IMAGE_BY_FIELD[activity.field];
-  if (byField) return responsiveActivityImage(byField);
+  const defaultUrl = getActivityDefaultImage(activity && activity.field);
+  if (defaultUrl) return { type: 'default', url: defaultUrl };
 
   return null;
+}
+
+// Shared inline onerror handler for every activity <img> (real photo OR
+// default thumbnail) across records / home / admin. A real photo that fails to
+// load — deleted Storage file, bad URL, network error, or a decode failure —
+// is swapped exactly once to its field default; if that default ALSO fails to
+// load (or the field has none), the <img> is removed so the frame's plain CSS
+// background shows, instead of looping forever or leaving a broken-image icon.
+// Reads the field from data-field (the caller sets it) because this is wired
+// up as a plain inline onerror="" string rather than a closure.
+function handleActivityImageError(img) {
+  img.onerror = null; // stop this handler re-firing on the swap we do below
+  const fallback = getActivityDefaultImage(img.dataset.field);
+  const current = img.getAttribute('src') || '';
+
+  // Swap to the field default only when there is one AND we aren't already
+  // showing it (guards against re-entry when the default itself is what failed).
+  if (fallback && current.indexOf(fallback) === -1) {
+    img.alt = '';
+    img.setAttribute('aria-hidden', 'true');
+    img.removeAttribute('srcset');
+    img.removeAttribute('sizes');
+    img.onerror = function () { img.onerror = null; img.remove(); };
+    img.src = fallback;
+    return;
+  }
+  img.remove();
+}
+
+// Canonical display order for the public records list AND the admin activity
+// list, so the two never disagree about where an activity sits:
+//   1. year — newest year first
+//   2. within a year — sort_order ascending (the admin-controlled order;
+//      a smaller value means "earlier / higher up". A missing sort_order
+//      sorts as 0.)
+//   3. remaining ties — created_at, newest first
+//   4. final stable tiebreaker — id, newest first
+// Home's "대표 활동" section does NOT use this — it keeps its own featured_order.
+function compareActivitiesForDisplay(a, b) {
+  const yearA = Number(a.year) || 0;
+  const yearB = Number(b.year) || 0;
+  if (yearA !== yearB) return yearB - yearA;
+
+  const soA = (a.sort_order == null) ? 0 : Number(a.sort_order);
+  const soB = (b.sort_order == null) ? 0 : Number(b.sort_order);
+  if (soA !== soB) return soA - soB;
+
+  const createdA = a.created_at ? Date.parse(a.created_at) : 0;
+  const createdB = b.created_at ? Date.parse(b.created_at) : 0;
+  if ((createdA || 0) !== (createdB || 0)) return (createdB || 0) - (createdA || 0);
+
+  return (Number(b.id) || 0) - (Number(a.id) || 0);
+}
+
+function sortActivitiesForDisplay(activities) {
+  return activities.slice().sort(compareActivitiesForDisplay);
 }
 
 // Overrides a static local <img> (hero photo, about portrait) with a live
