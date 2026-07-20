@@ -309,8 +309,9 @@ function isImagePathStillReferenced(path, excludeActivityId) {
 let currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
 
 function activityRowHtml(a) {
-  const thumb = a.image_url
-    ? `<img class="mgmt-row-thumb" src="${escHtml(a.image_url)}" alt="">`
+  const imageResult = resolveActivityImage(a);
+  const thumb = imageResult
+    ? `<img class="mgmt-row-thumb" src="${escHtml(imageResult.url)}" alt="" data-field="${escHtml(a.field)}" onerror="handleActivityImageError(this)">`
     : `<div class="mgmt-row-thumb-placeholder"></div>`;
   const badge = a.featured ? '<span class="mgmt-row-badge">대표 활동</span>' : '';
   return `

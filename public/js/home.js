@@ -7,11 +7,12 @@
     const num = String(index + 1).padStart(2, '0');
     const imageResult = resolveActivityImage(a);
     let imageHtml = '';
-    if (imageResult && imageResult.type === 'single') {
-      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.url) + '" alt="' + escHtml(a.title) + '" decoding="async"></div>';
-    } else if (imageResult) {
-      const srcset = escHtml(imageResult.src960) + ' 960w, ' + escHtml(imageResult.src1600) + ' 1600w';
-      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.src960) + '" srcset="' + srcset + '" sizes="(max-width: 768px) calc(100vw - 40px), 50vw" alt="' + escHtml(a.title) + '" decoding="async"></div>';
+    if (imageResult) {
+      const isReal = imageResult.type === 'real';
+      const alt = isReal ? escHtml(a.title) : '';
+      const decorative = isReal ? '' : ' aria-hidden="true"';
+      imageHtml = '<div class="img-frame featured-frame"><img src="' + escHtml(imageResult.url) + '" alt="' + alt + '"' + decorative +
+        ' data-field="' + escHtml(a.field) + '" onerror="handleActivityImageError(this)" decoding="async"></div>';
     }
     return '' +
       '<article class="featured-card">' +
