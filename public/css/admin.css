@@ -275,6 +275,142 @@ body.admin-body {
 
 .mgmt-empty { font-size: 13px; color: #737373; }
 
+/* ── Activity year groups + in-year ordering ── */
+
+.mgmt-year-group { margin-bottom: 22px; }
+
+.mgmt-year-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 2px 10px;
+  border-bottom: 1px solid #DEDCD3;
+  margin-bottom: 10px;
+}
+
+.mgmt-year-label {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.mgmt-year-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mgmt-year-order-actions[hidden] { display: none; }
+
+.mgmt-year-order-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mgmt-order-dirty {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.mgmt-order-save {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ink);
+  color: #FFFFFF;
+}
+
+.mgmt-order-save:hover { background: #333333; }
+.mgmt-order-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.mgmt-order-restore[hidden] { display: none; }
+
+.mgmt-order-restore {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: #FFFFFF;
+  color: var(--ink);
+}
+
+.mgmt-order-restore:hover { background: #ECECEC; }
+
+/* Drag handle — the ONLY part of a row that starts a drag. */
+.mgmt-row-handle {
+  flex-shrink: 0;
+  cursor: grab;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: -2px;
+  padding: 0 4px;
+  min-width: 24px;
+  min-height: 44px;
+  color: #9A978C;
+  background: none;
+  border: none;
+}
+
+.mgmt-row-handle:active { cursor: grabbing; }
+.mgmt-row-handle:hover { color: var(--ink); }
+.mgmt-row-handle:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+
+.mgmt-row-move {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mgmt-move-btn {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  width: 26px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #DEDCD3;
+  background: #FFFFFF;
+  color: var(--ink);
+}
+
+.mgmt-move-btn:hover:not(:disabled) { background: #ECECEC; }
+.mgmt-move-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.mgmt-move-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.mgmt-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.activity-row.dragging {
+  opacity: 0.55;
+  border-color: var(--ink);
+  background: #FBF6EA;
+}
+
 .mgmt-form {
   display: flex;
   flex-direction: column;
@@ -700,15 +836,31 @@ body.admin-body {
     order: 1;
   }
 
+  .mgmt-row-handle,
+  .mgmt-row-move,
   .mgmt-row-thumb,
   .mgmt-row-thumb-placeholder {
     order: 0;
   }
 
   .mgmt-row-badge,
+  .mgmt-row-actions,
   .mgmt-row-edit,
   .mgmt-row-delete {
     order: 2;
+  }
+
+  /* Reorder buttons are the touch/keyboard path (drag is desktop-only), so
+     keep them comfortably tappable and let the row's action buttons wrap
+     onto their own line instead of overlapping. */
+  .mgmt-row-actions {
+    margin-left: auto;
+  }
+
+  .mgmt-move-btn {
+    width: 34px;
+    height: 28px;
+    font-size: 12px;
   }
 
   .form-row {

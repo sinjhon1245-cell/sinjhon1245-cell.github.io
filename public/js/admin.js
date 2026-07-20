@@ -308,22 +308,275 @@ function isImagePathStillReferenced(path, excludeActivityId) {
 
 let currentData = { activities: [], specialties: [], interests: [], settings: {}, settingsRows: [], careers: [], careersError: null };
 
-function activityRowHtml(a) {
-  const thumb = a.image_url
-    ? `<img class="mgmt-row-thumb" src="${escHtml(a.image_url)}" alt="">`
-    : `<div class="mgmt-row-thumb-placeholder"></div>`;
+// The small list thumbnail follows the exact same real-photo → field-default
+// → nothing priority as the public cards (resolveActivityImage, site-data.js),
+// so a photo-less activity shows its field's default thumbnail here too
+// instead of the old empty beige square. The thumb is decorative in this
+// admin list (alt=""), and data-field lets a broken real photo fall back to
+// the field default via the shared onerror handler.
+function activityThumbHtml(a) {
+  const imageResult = resolveActivityImage(a);
+  if (imageResult) {
+    return `<img class="mgmt-row-thumb" src="${escHtml(imageResult.url)}" alt="" aria-hidden="true" data-field="${escHtml(a.field)}" onerror="handleActivityImageError(this)">`;
+  }
+  return `<div class="mgmt-row-thumb-placeholder"></div>`;
+}
+
+// One activity row inside a year group. The left side carries the reorder
+// affordances (drag handle + up/down/top buttons); the right side keeps the
+// existing 수정 / 삭제 actions. data-year lets the drag logic keep a row from
+// ever crossing into another year's group.
+function activityOrderRowHtml(a) {
+  const thumb = activityThumbHtml(a);
   const badge = a.featured ? '<span class="mgmt-row-badge">대표 활동</span>' : '';
   return `
-    <div class="mgmt-row" data-id="${escHtml(a.id)}">
+    <div class="mgmt-row activity-row" data-id="${escHtml(a.id)}" data-year="${escHtml(a.year)}">
+      <button type="button" class="mgmt-row-handle" aria-label="드래그하여 순서 변경" title="드래그하여 순서 변경">⋮⋮</button>
+      <div class="mgmt-row-move">
+        <button type="button" class="mgmt-move-btn mgmt-move-up" aria-label="위로 이동">▲</button>
+        <button type="button" class="mgmt-move-btn mgmt-move-down" aria-label="아래로 이동">▼</button>
+        <button type="button" class="mgmt-move-btn mgmt-move-top" aria-label="맨 위로 이동">⤒</button>
+      </div>
       ${thumb}
       <div class="mgmt-row-body">
         <span class="mgmt-row-title">${escHtml(a.title)}</span>
         <span class="mgmt-row-meta">${escHtml(a.year)} · ${escHtml(a.field)} · ${escHtml(a.role)} · ${escHtml(a.type)}</span>
       </div>
       ${badge}
-      <button class="mgmt-row-edit" type="button" data-table="activities" data-id="${escHtml(a.id)}">수정</button>
-      <button class="mgmt-row-delete" type="button" data-table="activities" data-id="${escHtml(a.id)}">삭제</button>
+      <div class="mgmt-row-actions">
+        <button class="mgmt-row-edit" type="button" data-table="activities" data-id="${escHtml(a.id)}">수정</button>
+        <button class="mgmt-row-delete" type="button" data-table="activities" data-id="${escHtml(a.id)}">삭제</button>
+      </div>
     </div>`;
+}
+
+// ── Activity list: per-year groups + in-year ordering ──
+//
+// Snapshot of each year's saved (server) id order, captured every render, so
+// isYearDirty() can tell when the on-screen order has drifted from it. Keyed
+// by year string.
+let activityOrderBaseline = {};
+
+// Renders #activities-list grouped by year (newest first), each group in the
+// same canonical order as the public page (sortActivitiesForDisplay). Replaces
+// the generic renderList for activities so it can add the year headings and
+// per-row ordering controls.
+function renderActivitiesList() {
+  const el = document.getElementById('activities-list');
+  if (!el) return;
+  activityOrderBaseline = {};
+
+  const activities = currentData.activities || [];
+  if (!activities.length) {
+    el.innerHTML = `<p class="mgmt-empty">아직 등록된 활동이 없습니다.</p>`;
+    return;
+  }
+
+  const sorted = sortActivitiesForDisplay(activities);
+  const order = [];
+  const byYear = new Map();
+  sorted.forEach((a) => {
+    const y = Number(a.year) || 0;
+    if (!byYear.has(y)) { byYear.set(y, []); order.push(y); }
+    byYear.get(y).push(a);
+  });
+
+  el.innerHTML = order.map((y) => {
+    const items = byYear.get(y);
+    activityOrderBaseline[String(y)] = items.map((a) => String(a.id));
+    const rows = items.map(activityOrderRowHtml).join('');
+    return `
+      <div class="mgmt-year-group" data-year="${escHtml(y)}">
+        <div class="mgmt-year-head">
+          <span class="mgmt-year-label">${escHtml(y)}년 · ${items.length}건</span>
+          <div class="mgmt-year-order-actions" data-year="${escHtml(y)}" hidden>
+            <span class="mgmt-order-dirty">저장되지 않은 순서 변경</span>
+            <button type="button" class="mgmt-order-restore" data-year="${escHtml(y)}" hidden>서버 순서로 되돌리기</button>
+            <button type="button" class="mgmt-order-save" data-year="${escHtml(y)}">순서 저장</button>
+          </div>
+        </div>
+        <div class="mgmt-year-rows" data-year="${escHtml(y)}">${rows}</div>
+      </div>`;
+  }).join('');
+
+  wireActivityOrderControls();
+  order.forEach((y) => updateMoveButtonStates(String(y)));
+}
+
+function yearRowsContainer(year) {
+  return document.querySelector('.mgmt-year-rows[data-year="' + year + '"]');
+}
+
+function currentYearOrder(year) {
+  const container = yearRowsContainer(year);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.activity-row')).map((r) => r.dataset.id);
+}
+
+function isYearDirty(year) {
+  const base = activityOrderBaseline[year] || [];
+  const cur = currentYearOrder(year);
+  if (base.length !== cur.length) return true;
+  return base.some((id, i) => id !== cur[i]);
+}
+
+// First/last row can't move further, so their up/top / down buttons disable.
+function updateMoveButtonStates(year) {
+  const container = yearRowsContainer(year);
+  if (!container) return;
+  const rows = Array.from(container.querySelectorAll('.activity-row'));
+  rows.forEach((row, i) => {
+    const up = row.querySelector('.mgmt-move-up');
+    const top = row.querySelector('.mgmt-move-top');
+    const down = row.querySelector('.mgmt-move-down');
+    if (up) up.disabled = (i === 0);
+    if (top) top.disabled = (i === 0);
+    if (down) down.disabled = (i === rows.length - 1);
+  });
+}
+
+// Shows/hides the "저장되지 않은 순서 변경" indicator + 순서 저장 button for a year.
+function refreshYearDirty(year) {
+  const actions = document.querySelector('.mgmt-year-order-actions[data-year="' + year + '"]');
+  if (actions) actions.hidden = !isYearDirty(year);
+}
+
+function afterReorder(year) {
+  updateMoveButtonStates(year);
+  refreshYearDirty(year);
+}
+
+function moveActivityRow(row, direction) {
+  const container = row.parentNode;
+  if (direction === 'up') {
+    const prev = row.previousElementSibling;
+    if (prev) container.insertBefore(row, prev);
+  } else if (direction === 'down') {
+    const next = row.nextElementSibling;
+    if (next) container.insertBefore(next, row);
+  } else if (direction === 'top') {
+    container.insertBefore(row, container.firstElementChild);
+  }
+}
+
+// Native HTML5 drag, scoped to a single year group. The whole card is NOT
+// draggable — only pressing the ⋮⋮ handle arms `draggable`, and a dragover is
+// ignored (no preventDefault → no drop) unless the target row is in the same
+// year as the row being dragged, so a row can never leave its year.
+let draggingRow = null;
+let draggingYear = null;
+
+function wireRowDrag(row) {
+  const handle = row.querySelector('.mgmt-row-handle');
+  if (!handle) return;
+
+  handle.addEventListener('mousedown', () => { row.setAttribute('draggable', 'true'); });
+  handle.addEventListener('mouseup', () => { row.removeAttribute('draggable'); });
+
+  row.addEventListener('dragstart', (e) => {
+    draggingRow = row;
+    draggingYear = row.dataset.year;
+    row.classList.add('dragging');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', row.dataset.id); } catch (_) {}
+    }
+  });
+
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    row.removeAttribute('draggable');
+    const year = draggingYear;
+    draggingRow = null;
+    draggingYear = null;
+    if (year != null) afterReorder(year);
+  });
+
+  row.addEventListener('dragover', (e) => {
+    if (!draggingRow || draggingRow === row) return;
+    if (row.dataset.year !== draggingYear) return; // stay inside the year group
+    e.preventDefault();
+    const rect = row.getBoundingClientRect();
+    const after = (e.clientY - rect.top) > rect.height / 2;
+    const container = row.parentNode;
+    if (after) {
+      container.insertBefore(draggingRow, row.nextElementSibling);
+    } else {
+      container.insertBefore(draggingRow, row);
+    }
+  });
+}
+
+function wireActivityOrderControls() {
+  document.querySelectorAll('#activities-list .activity-row').forEach((row) => {
+    const year = row.dataset.year;
+    const up = row.querySelector('.mgmt-move-up');
+    const down = row.querySelector('.mgmt-move-down');
+    const top = row.querySelector('.mgmt-move-top');
+    if (up) up.addEventListener('click', () => { moveActivityRow(row, 'up'); afterReorder(year); });
+    if (down) down.addEventListener('click', () => { moveActivityRow(row, 'down'); afterReorder(year); });
+    if (top) top.addEventListener('click', () => { moveActivityRow(row, 'top'); afterReorder(year); });
+    wireRowDrag(row);
+  });
+
+  document.querySelectorAll('#activities-list .mgmt-order-save').forEach((btn) => {
+    btn.addEventListener('click', () => saveYearOrder(btn.dataset.year, btn));
+  });
+  document.querySelectorAll('#activities-list .mgmt-order-restore').forEach((btn) => {
+    // Restore = just reload the server state, discarding the unsaved reorder.
+    btn.addEventListener('click', () => loadAll());
+  });
+}
+
+// Persists one year group's order. Normalizes to an even 10-step spacing in
+// the current on-screen order and writes only this year's rows (only the
+// sort_order column — never any other field). A success message shows ONLY
+// when every row's update succeeded; on any failure the group stays dirty for
+// a retry and a "서버 순서로 되돌리기" button appears.
+let isSavingYearOrder = false;
+async function saveYearOrder(year, btn) {
+  if (btn.disabled || isSavingYearOrder) return;
+  const ids = currentYearOrder(year);
+  if (!ids.length) return;
+
+  const message = document.getElementById('activity-form-message');
+  const restoreBtn = document.querySelector('.mgmt-order-restore[data-year="' + year + '"]');
+
+  isSavingYearOrder = true;
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = '저장 중…';
+  if (restoreBtn) restoreBtn.hidden = true;
+  if (message) { message.textContent = ''; message.className = 'form-message'; }
+
+  const updates = ids.map((id, i) => ({ id, sort_order: (i + 1) * 10 }));
+
+  try {
+    const results = await Promise.all(
+      updates.map((u) =>
+        supabaseClient.from('activities').update({ sort_order: u.sort_order }).eq('id', u.id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed) throw new Error(describeSupabaseError(failed.error));
+
+    if (message) {
+      message.textContent = year + '년 활동 순서가 저장되었습니다.';
+      message.className = 'form-message success';
+    }
+    await loadAll(); // reload → baseline reset, dirty indicator clears
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    if (restoreBtn) restoreBtn.hidden = false;
+    if (message) {
+      message.textContent = (err.message || '순서 저장에 실패했습니다.') +
+        ' 변경은 아직 저장되지 않았습니다. 다시 시도하거나 "서버 순서로 되돌리기"를 눌러 주세요.';
+      message.className = 'form-message error';
+    }
+  } finally {
+    isSavingYearOrder = false;
+  }
 }
 
 function specialtyRowHtml(s) {
@@ -378,7 +631,7 @@ async function loadAll() {
     adminLoadError.textContent = describeSupabaseError(err);
     adminLoadError.style.display = 'block';
   }
-  renderList('activities-list', currentData.activities, activityRowHtml, '아직 등록된 활동이 없습니다.');
+  renderActivitiesList();
   renderList('specialties-list-admin', currentData.specialties, specialtyRowHtml, '아직 등록된 전문 분야가 없습니다.');
   renderList('interests-list-admin', currentData.interests, interestRowHtml, '아직 등록된 관심 주제가 없습니다.');
   if (currentData.careersError) {
@@ -449,6 +702,22 @@ function wireRowButtons() {
 
 function nextSortOrder(rows) {
   return rows.reduce((max, r) => Math.max(max, r.sort_order || 0), 0) + 1;
+}
+
+// sort_order for a brand-new activity so it lands at the TOP of its own year
+// group (smaller sort_order = higher up, matching sortActivitiesForDisplay).
+// Only this one year is consulted and only the new row is written — no other
+// activity's sort_order is touched, so adding a 2026 activity never disturbs
+// the 2025 order. An empty year starts at 0; otherwise we go 10 below the
+// current minimum, leaving room without renumbering anything.
+function firstSortOrderForYear(activities, year) {
+  const sameYear = activities.filter((a) => Number(a.year) === Number(year));
+  if (sameYear.length === 0) return 0;
+  const min = sameYear.reduce(
+    (m, a) => Math.min(m, a.sort_order == null ? 0 : Number(a.sort_order)),
+    Infinity
+  );
+  return min - 10;
 }
 
 // ── 활동기록 form (add + edit) ──
@@ -822,7 +1091,8 @@ function setupActivityForm() {
         const { error } = await supabaseClient.from('activities').update(row).eq('id', editingId);
         if (error) throw new Error(describeSupabaseError(error));
       } else {
-        row.sort_order = nextSortOrder(currentData.activities);
+        // New activity → first in its year group (not the global bottom).
+        row.sort_order = firstSortOrderForYear(currentData.activities, year);
         const { error } = await supabaseClient.from('activities').insert(row);
         if (error) throw new Error(describeSupabaseError(error));
       }
