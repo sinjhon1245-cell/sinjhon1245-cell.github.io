@@ -425,60 +425,184 @@ body.admin-body {
   color: #737373;
 }
 
-/* ── 활동 대표사진 업로드 영역 ──
-   The real <input type="file"> is stretched (position:absolute; inset:0)
-   over the whole zone and made invisible — it's still the actual clickable/
-   focusable/keyboard-operable control (native click-to-open and Enter/Space
-   both work with zero extra JS), it just sits on top of the styled hint/
-   preview content that's rendered for it. */
-.photo-upload-zone {
+/* ── 활동 대표사진 업로드 ──
+   Two pieces: a quiet collapsed row (upload button + a small existing-photo
+   thumbnail when there is one) and a panel that only appears once the admin
+   asks for it, toggled by activity-photo-toggle. None of the upload buttons
+   use the solid-black .btn-add treatment — they're deliberately outline/
+   quiet so they never compete with the real "활동 저장" submit button. */
+
+.photo-upload-icon,
+.photo-upload-icon-lg { flex-shrink: 0; }
+
+.photo-upload-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.photo-upload-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: none;
+  color: var(--ink);
+}
+
+.photo-upload-toggle:hover { background: #ECECEC; }
+.photo-upload-toggle[aria-expanded="true"] { background: var(--ink); color: #FFFFFF; }
+
+.photo-upload-existing-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-upload-existing-mini img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #F0EEE6;
+}
+
+.photo-upload-remove-existing {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #B3261E;
+  background: none;
+  color: #B3261E;
+}
+
+.photo-upload-remove-existing:hover { background: #B3261E; color: #FFFFFF; }
+
+.photo-upload-panel {
   position: relative;
+  margin-top: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 120px;
-  padding: 20px;
+  gap: 12px;
+  width: 100%;
+  padding: 18px;
   border: 1px dashed #C7C4B8;
   border-radius: 12px;
   background: #FFFFFF;
-  text-align: center;
 }
 
-.photo-upload-zone.drag-active {
+.photo-upload-panel.drag-active {
   border-style: solid;
   border-color: var(--accent-text);
   background: #FBF6EA;
 }
 
-/* :has() lets the whole zone show a focus ring for the real input sitting
-   on top of it (the input's own outline would be invisible along with the
-   rest of it, since opacity:0 hides outlines too). */
-.photo-upload-zone:has(.photo-upload-input:focus-visible) {
+.photo-upload-panel:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
-.photo-upload-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
+.photo-upload-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.photo-upload-hint {
+.photo-upload-panel-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.photo-upload-close {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #707070;
+  border-bottom: 1px solid #707070;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  min-height: 44px;
+}
+
+.photo-upload-close:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* The real file input stays fully hidden — activity-photo-browse-btn /
+   activity-photo-browse-again-btn are the only things that ever call
+   .click() on it. It's still in the DOM and functionally normal, just never
+   shown in its native browser-chrome form. */
+.photo-upload-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.photo-upload-hint-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  text-align: center;
+  color: #707070;
+}
+
+.photo-upload-hint-main {
   margin: 0;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.photo-upload-hint-sub {
+  margin: 0;
+  font-size: 12.5px;
   line-height: 1.6;
   color: #707070;
 }
 
-.photo-upload-preview {
+.photo-upload-browse-btn {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: none;
+  color: var(--ink);
+}
+
+.photo-upload-browse-btn:hover { background: #ECECEC; }
+
+.photo-upload-format-hint {
+  font-size: 11.5px;
+  color: #999999;
+}
+
+.photo-upload-preview-state {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -486,9 +610,9 @@ body.admin-body {
   text-align: left;
 }
 
-.photo-upload-preview img {
-  width: 72px;
-  height: 72px;
+.photo-upload-preview-state img {
+  width: 64px;
+  height: 64px;
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
@@ -498,8 +622,9 @@ body.admin-body {
 .photo-upload-preview-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
+  flex: 1;
 }
 
 .photo-upload-preview-name {
@@ -516,21 +641,28 @@ body.admin-body {
   color: #707070;
 }
 
-.photo-upload-remove {
-  align-self: flex-start;
+.photo-upload-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.photo-upload-cancel-btn {
   cursor: pointer;
   font-family: inherit;
   font-size: 12.5px;
-  font-weight: 600;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid #B3261E;
+  color: #707070;
+  border-bottom: 1px solid #707070;
   background: none;
-  color: #B3261E;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  min-height: 44px;
 }
 
-.photo-upload-remove:hover { background: #B3261E; color: #FFFFFF; }
+.photo-upload-cancel-btn:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
 .admin-load-error {
   font-size: 14px;

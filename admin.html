@@ -195,22 +195,52 @@
       <label class="field">한 줄 설명
         <textarea name="description" rows="2" placeholder="활동을 간단히 소개해 주세요"></textarea>
       </label>
-      <label class="field">대표사진 (선택 — 선택하지 않으면 기존 사진이 그대로 유지됩니다)
-        <div class="photo-upload-zone" id="activity-photo-zone">
-          <input type="file" name="photo" id="activity-photo-input" accept="image/jpeg,image/png,image/webp" class="photo-upload-input">
-          <p class="photo-upload-hint" id="activity-photo-hint">이미지를 선택하거나 끌어다 놓으세요.<br>화면을 캡처한 뒤 Ctrl+V로 바로 붙여넣을 수도 있습니다.</p>
-          <div class="photo-upload-preview" id="activity-photo-preview" style="display:none">
+      <div class="field">
+        <span class="field-label-text">사진</span>
+        <span class="field-hint">선택하지 않으면 기존 사진이 그대로 유지됩니다.</span>
+
+        <div class="photo-upload-collapsed" id="activity-photo-collapsed">
+          <button type="button" class="photo-upload-toggle" id="activity-photo-toggle" aria-expanded="false">
+            <svg class="photo-upload-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3M12 3l-4 4M12 3l4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            사진 업로드
+          </button>
+          <div class="photo-upload-existing-mini" id="activity-photo-existing-mini" style="display:none">
+            <img id="activity-photo-existing-mini-img" alt="현재 등록된 대표사진">
+            <button type="button" class="photo-upload-remove-existing" id="activity-photo-remove-existing-btn">기존 이미지 제거</button>
+          </div>
+        </div>
+
+        <div class="photo-upload-panel" id="activity-photo-panel" tabindex="0" role="group" aria-label="대표사진 업로드 패널" style="display:none">
+          <div class="photo-upload-panel-head">
+            <span class="photo-upload-panel-title">사진 업로드</span>
+            <button type="button" class="photo-upload-close" id="activity-photo-close-btn">닫기</button>
+          </div>
+
+          <input type="file" id="activity-photo-input" accept="image/jpeg,image/png,image/webp" class="photo-upload-input-hidden" tabindex="-1">
+
+          <div class="photo-upload-hint-state" id="activity-photo-hint-state">
+            <svg class="photo-upload-icon-lg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 15V3M12 3l-4 4M12 3l4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <p class="photo-upload-hint-main" id="activity-photo-hint-main">파일을 선택하거나 여기에 끌어다 놓으세요.</p>
+            <p class="photo-upload-hint-sub">화면을 캡처한 뒤 Ctrl+V로 바로 붙여넣을 수도 있습니다.</p>
+            <button type="button" class="photo-upload-browse-btn" id="activity-photo-browse-btn">파일에서 선택</button>
+            <span class="photo-upload-format-hint">JPG · PNG · WEBP / 최대 10MB</span>
+          </div>
+
+          <div class="photo-upload-preview-state" id="activity-photo-preview" style="display:none">
             <img id="activity-photo-preview-img" alt="">
             <div class="photo-upload-preview-body">
               <span class="photo-upload-preview-name" id="activity-photo-preview-name"></span>
               <span class="photo-upload-preview-meta" id="activity-photo-preview-meta"></span>
+              <div class="photo-upload-preview-actions">
+                <button type="button" class="photo-upload-browse-btn" id="activity-photo-browse-again-btn">다른 사진 선택</button>
+                <button type="button" class="photo-upload-cancel-btn" id="activity-photo-cancel-btn">선택 취소</button>
+              </div>
             </div>
           </div>
+
+          <div class="form-message" id="activity-photo-message" role="status" aria-live="polite"></div>
         </div>
-      </label>
-      <button type="button" class="photo-upload-remove" id="activity-photo-remove-btn" style="display:none">이미지 제거</button>
-      <span class="field-hint">JPG · PNG · WEBP, 최대 10MB</span>
-      <div class="form-message" id="activity-photo-message" role="status" aria-live="polite"></div>
+      </div>
       <label class="field field-checkbox">
         <input type="checkbox" name="featured"> 대표 활동으로 표시 (홈 화면에도 노출)
       </label>
