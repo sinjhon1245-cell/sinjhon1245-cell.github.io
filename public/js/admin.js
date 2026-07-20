@@ -452,9 +452,213 @@ function nextSortOrder(rows) {
 }
 
 // ── 활동기록 form (add + edit) ──
+//
+// Activity photo state is shared by every input path (file picker,
+// drag-drop, clipboard paste) — see setupActivityPhotoZone(). All three
+// funnel into handleIncomingActivityImage(), which is the one place that
+// validates/optimizes a file and updates this state; the submit handler
+// below only ever reads from it (never from input.files or FormData for
+// the photo itself), so there is exactly one source of truth regardless of
+// how the image arrived.
+let existingImageUrl = null;   // already-saved Storage URL (edit mode only)
+let existingImagePath = null;  // already-saved Storage path (edit mode only)
+let pendingImageFile = null;   // validated/optimized File — not yet uploaded
+let removeExistingImage = false; // true = clear the existing photo on save
+let previewObjectUrl = null;   // URL.createObjectURL(pendingImageFile), revoked on replace/clear
+let pendingImageLabel = null;  // display name for the pending file ("화면 캡처 이미지" or its filename)
+let pendingImageWidth = null;
+let pendingImageHeight = null;
 
-let editingActivityImageUrl = null;
-let editingActivityImagePath = null;
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + 'B';
+  const kb = bytes / 1024;
+  if (kb < 1024) return kb.toFixed(kb < 10 ? 1 : 0) + 'KB';
+  const mb = kb / 1024;
+  return mb.toFixed(mb < 10 ? 1 : 0) + 'MB';
+}
+
+function setActivityPhotoMessage(text, type) {
+  const el = document.getElementById('activity-photo-message');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = 'form-message' + (type ? ' ' + type : '');
+}
+
+// Revokes the pending preview's object URL (if any) and clears the pending
+// selection — called before accepting a new file (so previews never
+// accumulate un-revoked URLs) and when the user cancels a pending selection
+// or the form itself resets.
+function clearPendingImage() {
+  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+  pendingImageFile = null;
+  previewObjectUrl = null;
+  pendingImageLabel = null;
+  pendingImageWidth = null;
+  pendingImageHeight = null;
+}
+
+// Single render function for the zone — called after every state change so
+// the three possible views (empty / existing photo / new pending photo) and
+// the remove button's label+behavior always match the current state.
+function renderActivityPhotoZone() {
+  const hint = document.getElementById('activity-photo-hint');
+  const previewWrap = document.getElementById('activity-photo-preview');
+  const img = document.getElementById('activity-photo-preview-img');
+  const nameEl = document.getElementById('activity-photo-preview-name');
+  const metaEl = document.getElementById('activity-photo-preview-meta');
+  const removeBtn = document.getElementById('activity-photo-remove-btn');
+  if (!hint || !previewWrap || !removeBtn) return;
+
+  if (pendingImageFile) {
+    img.src = previewObjectUrl;
+    img.alt = '선택한 대표사진 미리보기';
+    nameEl.textContent = pendingImageLabel || pendingImageFile.name;
+    metaEl.textContent = formatFileSize(pendingImageFile.size) +
+      (pendingImageWidth && pendingImageHeight ? ' · ' + pendingImageWidth + '×' + pendingImageHeight : '');
+    previewWrap.style.display = 'flex';
+    hint.style.display = 'none';
+    removeBtn.style.display = 'inline-flex';
+    removeBtn.textContent = '선택 취소';
+    removeBtn.setAttribute('aria-label', '새로 선택한 대표사진 취소');
+  } else if (existingImageUrl && !removeExistingImage) {
+    img.src = existingImageUrl;
+    img.alt = '현재 등록된 대표사진';
+    nameEl.textContent = '현재 등록된 사진';
+    metaEl.textContent = '';
+    previewWrap.style.display = 'flex';
+    hint.style.display = 'none';
+    removeBtn.style.display = 'inline-flex';
+    removeBtn.textContent = '이미지 제거';
+    removeBtn.setAttribute('aria-label', '현재 등록된 대표사진 제거');
+  } else {
+    previewWrap.style.display = 'none';
+    hint.style.display = 'block';
+    removeBtn.style.display = 'none';
+  }
+}
+
+// The one shared entry point for every input method — file picker, drop,
+// and paste all call this with the raw File they received. Validates,
+// decodes, and optimizes it (prepareImageForUpload, site-data.js), then
+// updates the shared pending-image state and re-renders the zone. Never
+// touches Storage — upload only happens when the activity form is saved.
+async function handleIncomingActivityImage(file, opts) {
+  opts = opts || {};
+  setActivityPhotoMessage('', '');
+  try {
+    const prepared = await prepareImageForUpload(file);
+    clearPendingImage();
+    pendingImageFile = prepared.file;
+    previewObjectUrl = URL.createObjectURL(prepared.file);
+    pendingImageLabel = opts.label || file.name;
+    pendingImageWidth = prepared.width;
+    pendingImageHeight = prepared.height;
+    removeExistingImage = false;
+    renderActivityPhotoZone();
+    if (prepared.tooSmall) {
+      setActivityPhotoMessage('이미지 크기가 작아 화질이 흐릿하게 보일 수 있습니다.', 'warning');
+    }
+  } catch (err) {
+    setActivityPhotoMessage(err.message || '이미지를 불러올 수 없습니다. 다른 파일을 선택해 주세요.', 'error');
+  }
+}
+
+// Picks the first image among possibly-multiple incoming files (drop or
+// paste can both deliver more than one) and warns when there was more than
+// one candidate, since only a single representative photo is supported.
+function processIncomingActivityFiles(fileList, opts) {
+  const files = Array.from(fileList || []);
+  if (files.length === 0) return;
+  if (files.length > 1) {
+    setActivityPhotoMessage('대표사진에는 한 장만 등록할 수 있습니다.', 'warning');
+  }
+  const target = files.find((f) => ALLOWED_IMAGE_TYPES.includes(f.type)) || files[0];
+  handleIncomingActivityImage(target, opts);
+}
+
+function setupActivityPhotoZone() {
+  const zone = document.getElementById('activity-photo-zone');
+  const input = document.getElementById('activity-photo-input');
+  const removeBtn = document.getElementById('activity-photo-remove-btn');
+  if (!zone || !input || !removeBtn) return;
+
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    input.value = ''; // let re-selecting the same file fire another change event
+    if (file) processIncomingActivityFiles([file]);
+  });
+
+  // Only intercepts a paste that actually contains an image — a text-only
+  // clipboard passes through untouched, and this listener lives on the
+  // upload zone's own input, so it only ever fires while that input is
+  // focused (never hijacks paste in the title/description fields).
+  input.addEventListener('paste', (e) => {
+    const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+    const imageItems = items.filter((it) => it.kind === 'file' && it.type && it.type.indexOf('image/') === 0);
+    if (imageItems.length === 0) return;
+    e.preventDefault();
+    if (imageItems.length > 1) {
+      setActivityPhotoMessage('대표사진에는 한 장만 등록할 수 있습니다.', 'warning');
+    }
+    const raw = imageItems[0].getAsFile();
+    if (!raw) {
+      setActivityPhotoMessage('이미지를 붙여넣을 수 없습니다. 다시 캡처하거나 파일을 선택해 주세요.', 'error');
+      return;
+    }
+    // Screenshot tools typically hand back a generic/blank filename — swap
+    // it for a clear, sortable placeholder rather than showing "image.png".
+    const hasRealName = raw.name && !/^image\.(png|jpe?g|webp)$/i.test(raw.name);
+    if (hasRealName) {
+      handleIncomingActivityImage(raw);
+    } else {
+      const ext = (raw.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+      const named = new File([raw], 'screenshot-' + Date.now() + '.' + ext, { type: raw.type || 'image/png' });
+      handleIncomingActivityImage(named, { label: '화면 캡처 이미지' });
+    }
+  });
+
+  ['dragenter', 'dragover'].forEach((evt) => {
+    zone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      zone.classList.add('drag-active');
+      const hint = document.getElementById('activity-photo-hint');
+      if (hint && hint.style.display !== 'none') hint.textContent = '여기에 이미지를 놓으세요.';
+    });
+  });
+
+  zone.addEventListener('dragleave', (e) => {
+    if (zone.contains(e.relatedTarget)) return; // still inside the zone (moved over a child) — not a real leave
+    zone.classList.remove('drag-active');
+    const hint = document.getElementById('activity-photo-hint');
+    if (hint) hint.innerHTML = '이미지를 선택하거나 끌어다 놓으세요.<br>화면을 캡처한 뒤 Ctrl+V로 바로 붙여넣을 수도 있습니다.';
+  });
+
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-active');
+    const hint = document.getElementById('activity-photo-hint');
+    if (hint) hint.innerHTML = '이미지를 선택하거나 끌어다 놓으세요.<br>화면을 캡처한 뒤 Ctrl+V로 바로 붙여넣을 수도 있습니다.';
+    processIncomingActivityFiles(e.dataTransfer.files);
+  });
+
+  removeBtn.addEventListener('click', () => {
+    if (pendingImageFile) {
+      clearPendingImage();
+    } else {
+      removeExistingImage = true;
+    }
+    setActivityPhotoMessage('', '');
+    renderActivityPhotoZone();
+  });
+}
+
+// Safety net: a drop that misses the zone would otherwise make the browser
+// navigate to/open the dropped file. This always preventDefault()s, but that
+// never interferes with an actual in-zone drop — the zone's own listener
+// above already ran and did the real handling by the time the event
+// reaches window.
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
 
 function enterActivityEditMode(row) {
   const form = document.getElementById('activity-form');
@@ -467,12 +671,13 @@ function enterActivityEditMode(row) {
   form.elements['description'].value = row.description || '';
   form.elements['featured'].checked = !!row.featured;
   form.elements['photo'].value = '';
-  form.elements['remove_photo'].checked = false;
-  editingActivityImageUrl = row.image_url || null;
-  editingActivityImagePath = row.image_path || null;
 
-  const removeWrap = document.getElementById('activity-remove-photo-wrap');
-  if (removeWrap) removeWrap.style.display = row.image_url ? 'flex' : 'none';
+  existingImageUrl = row.image_url || null;
+  existingImagePath = row.image_path || null;
+  removeExistingImage = false;
+  clearPendingImage();
+  setActivityPhotoMessage('', '');
+  renderActivityPhotoZone();
 
   document.getElementById('activity-form-submit').textContent = '활동 저장';
   document.getElementById('activity-form-cancel').style.display = 'inline';
@@ -486,10 +691,14 @@ function exitActivityEditMode() {
   if (!form) return;
   form.reset();
   form.elements['id'].value = '';
-  editingActivityImageUrl = null;
-  editingActivityImagePath = null;
-  const removeWrap = document.getElementById('activity-remove-photo-wrap');
-  if (removeWrap) removeWrap.style.display = 'none';
+
+  existingImageUrl = null;
+  existingImagePath = null;
+  removeExistingImage = false;
+  clearPendingImage();
+  setActivityPhotoMessage('', '');
+  renderActivityPhotoZone();
+
   document.getElementById('activity-form-submit').textContent = '활동 추가';
   document.getElementById('activity-form-cancel').style.display = 'none';
 }
@@ -519,8 +728,6 @@ function setupActivityForm() {
     try {
       const fd = new FormData(form);
       const editingId = fd.get('id');
-      const file = fd.get('photo');
-      const removePhoto = fd.get('remove_photo') === 'on';
 
       const title = (fd.get('title') || '').trim();
       const description = (fd.get('description') || '').trim();
@@ -530,16 +737,20 @@ function setupActivityForm() {
       if (description.length > 2000) throw new Error('설명은 2000자 이내로 입력해 주세요.');
       if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error('연도를 올바르게 입력해 주세요 (2000~2100).');
 
-      let imageUrl = editingId ? editingActivityImageUrl : null;
-      let imagePath = editingId ? editingActivityImagePath : null;
+      // Photo state comes entirely from the shared pending-image state set up
+      // by handleIncomingActivityImage() — never from input.files/FormData —
+      // so it's identical regardless of whether the photo arrived via the
+      // file picker, a drag-drop, or a clipboard paste.
+      let imageUrl = editingId ? existingImageUrl : null;
+      let imagePath = editingId ? existingImagePath : null;
       const oldImagePath = imagePath;
 
-      if (file && file.size > 0) {
+      if (pendingImageFile) {
         message.textContent = '사진 업로드 중…';
-        newUpload = await uploadToStorage(file, 'activities');
+        newUpload = await uploadToStorage(pendingImageFile, 'activities');
         imageUrl = newUpload.url;
         imagePath = newUpload.path;
-      } else if (removePhoto) {
+      } else if (removeExistingImage) {
         imageUrl = null;
         imagePath = null;
       }
@@ -955,6 +1166,7 @@ async function init() {
     messageId: 'about-photo-message', actionsId: 'about-photo-actions', page: PAGES.about,
     successLabel: '프로필 사진이 교체되었습니다.'
   });
+  setupActivityPhotoZone();
   setupActivityForm();
   setupSpecialtyForm();
   setupCareerForm();

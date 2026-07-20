@@ -72,6 +72,88 @@ function buildStoragePath(folder, file) {
   return folder + '/' + stamp + '-' + crypto.randomUUID() + '.' + ext;
 }
 
+// ── Client-side image prep (validate → decode → optimize) ──
+//
+// Shared by every way an admin can supply an activity photo (file picker,
+// drag-drop, clipboard paste) so they all get identical validation and
+// output, with no duplicated logic per input method.
+
+const IMAGE_MIN_DIMENSION = 400; // below this a card photo will look soft when displayed — worth a warning, not a hard block
+const IMAGE_MAX_DIMENSION = 2000; // longest side; never upscales past the source
+
+// Decodes the file to confirm it's a real, undamaged image (a wrong/corrupt
+// MIME type alone wouldn't catch a truncated or non-image file named *.jpg),
+// then hands off to optimizeImageBitmap for resizing/re-encoding. Always
+// closes the ImageBitmap it opens, and falls back to the original file if
+// optimization itself fails for any reason — a failed optimization should
+// never block the upload outright when the source file is otherwise valid.
+async function prepareImageForUpload(file) {
+  validateImageFile(file);
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch (err) {
+    throw new Error('이미지를 불러올 수 없습니다. 다른 파일을 선택해 주세요.');
+  }
+  if (!bitmap.width || !bitmap.height) {
+    if (bitmap.close) bitmap.close();
+    throw new Error('이미지를 불러올 수 없습니다. 다른 파일을 선택해 주세요.');
+  }
+
+  const tooSmall = bitmap.width < IMAGE_MIN_DIMENSION || bitmap.height < IMAGE_MIN_DIMENSION;
+
+  let result;
+  try {
+    result = await optimizeImageBitmap(bitmap, file);
+  } catch (err) {
+    result = { file, width: bitmap.width, height: bitmap.height };
+  } finally {
+    if (bitmap.close) bitmap.close();
+  }
+
+  return { file: result.file, width: result.width, height: result.height, tooSmall };
+}
+
+// Resizes to a max 2000px longest side (never upscaling) and re-encodes:
+// PNG stays PNG (lossless — keeps transparency, and keeps small screen-capture
+// text crisp instead of blurring it under lossy compression); JPEG/WEBP
+// sources become WEBP at quality 0.88, in the 0.85–0.9 range that keeps fine
+// detail legible rather than chasing minimum file size. Skips the canvas
+// round-trip entirely when there's nothing to change.
+async function optimizeImageBitmap(bitmap, originalFile) {
+  const longestSide = Math.max(bitmap.width, bitmap.height);
+  const scale = longestSide > IMAGE_MAX_DIMENSION ? IMAGE_MAX_DIMENSION / longestSide : 1;
+  const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
+  const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
+
+  const isPng = originalFile.type === 'image/png';
+  const outputType = isPng ? 'image/png' : 'image/webp';
+  const outputExt = isPng ? 'png' : 'webp';
+  const quality = isPng ? undefined : 0.88;
+
+  if (scale === 1 && originalFile.type === outputType) {
+    return { file: originalFile, width: bitmap.width, height: bitmap.height };
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas 2d context unavailable');
+  ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, outputType, quality));
+  if (!blob) throw new Error('canvas encode failed');
+
+  const baseName = (originalFile.name || 'image').replace(/\.[a-zA-Z0-9]+$/, '');
+  return {
+    file: new File([blob], baseName + '.' + outputExt, { type: outputType }),
+    width: targetWidth,
+    height: targetHeight
+  };
+}
+
 // Shared fetch for public content (activities/specialties/interests/settings).
 // Queries Supabase directly — no backend server involved. Called fresh on
 // every page load/refresh; no realtime subscription (not needed for a
