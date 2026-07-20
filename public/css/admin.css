@@ -541,6 +541,38 @@ body.admin-body {
 
 .mgmt-row-edit:hover { background: #ECECEC; }
 
+/* "다음 연도로 복사" — neutral grey outline so it reads as secondary next to
+   수정, and clearly not destructive like the red 삭제. */
+.mgmt-row-copy {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #9A978C;
+  background: none;
+  color: #555555;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.mgmt-row-copy:hover { background: #ECECEC; color: var(--ink); }
+.mgmt-row-copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Copy-in-progress banner at the top of the activity form. */
+.activity-copy-banner[hidden] { display: none; }
+
+.activity-copy-banner {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-text);
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: #FBF6EA;
+}
+
 .photo-slot {
   display: flex;
   flex-direction: column;

@@ -344,6 +344,7 @@ function activityOrderRowHtml(a) {
       </div>
       ${badge}
       <div class="mgmt-row-actions">
+        <button class="mgmt-row-copy" type="button" data-id="${escHtml(a.id)}">다음 연도로 복사</button>
         <button class="mgmt-row-edit" type="button" data-table="activities" data-id="${escHtml(a.id)}">수정</button>
         <button class="mgmt-row-delete" type="button" data-table="activities" data-id="${escHtml(a.id)}">삭제</button>
       </div>
@@ -525,6 +526,12 @@ function wireActivityOrderControls() {
   document.querySelectorAll('#activities-list .mgmt-order-restore').forEach((btn) => {
     // Restore = just reload the server state, discarding the unsaved reorder.
     btn.addEventListener('click', () => loadAll());
+  });
+  document.querySelectorAll('#activities-list .mgmt-row-copy').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const row = currentData.activities.find((r) => String(r.id) === String(btn.dataset.id));
+      if (row) enterActivityCopyMode(row);
+    });
   });
 }
 
@@ -976,8 +983,25 @@ function setupActivityPhotoZone() {
 window.addEventListener('dragover', (e) => e.preventDefault());
 window.addEventListener('drop', (e) => e.preventDefault());
 
+// The "복사본 작성 중 · 원본: 2023년 과학대제전" banner at the top of the activity
+// form — only visible while a next-year copy is being drafted.
+function showActivityCopyBanner(row) {
+  const banner = document.getElementById('activity-copy-banner');
+  if (!banner) return;
+  banner.textContent = '복사본 작성 중 · 원본: ' + row.year + '년 ' + (row.title || '');
+  banner.hidden = false;
+}
+
+function hideActivityCopyBanner() {
+  const banner = document.getElementById('activity-copy-banner');
+  if (!banner) return;
+  banner.hidden = true;
+  banner.textContent = '';
+}
+
 function enterActivityEditMode(row) {
   const form = document.getElementById('activity-form');
+  hideActivityCopyBanner();
   form.elements['id'].value = row.id;
   form.elements['title'].value = row.title;
   form.elements['year'].value = row.year;
@@ -996,9 +1020,53 @@ function enterActivityEditMode(row) {
   renderActivityPhoto();
 
   document.getElementById('activity-form-submit').textContent = '활동 저장';
-  document.getElementById('activity-form-cancel').style.display = 'inline';
+  const cancel = document.getElementById('activity-form-cancel');
+  cancel.textContent = '수정 취소';
+  cancel.style.display = 'inline';
   clearSuccessActions('activity-form-actions');
   document.getElementById('activity-form-message').textContent = '';
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Prefills the form with a NEXT-YEAR copy of an existing activity, without
+// saving anything. What carries over: title / field / role / type /
+// description. What is reset: year → original + 1, 대표 활동 unchecked, photo
+// cleared. What is dropped entirely (never copied): id, created_at,
+// sort_order, featured_order, image_url, image_path — the new year gets its
+// own order and its own photo (the field default thumbnail shows until one is
+// uploaded). The admin reviews it and presses the normal 활동 추가 to create it,
+// at which point firstSortOrderForYear puts it first in the target year.
+function enterActivityCopyMode(row) {
+  exitActivityEditMode(); // clean add-mode slate first (also hides the banner)
+  const form = document.getElementById('activity-form');
+  if (!form) return;
+
+  form.elements['id'].value = '';            // stays an INSERT
+  form.elements['title'].value = row.title || '';
+  form.elements['field'].value = row.field || '';
+  form.elements['role'].value = row.role || '';
+  form.elements['type'].value = row.type || '';
+  form.elements['description'].value = row.description || '';
+  form.elements['year'].value = (Number(row.year) || new Date().getFullYear()) + 1;
+  form.elements['featured'].checked = false;
+
+  existingImageUrl = null;
+  existingImagePath = null;
+  removeExistingImage = false;
+  clearPendingImage();
+  setActivityPhotoMessage('', '');
+  setActivityPhotoPanelExpanded(false);
+  renderActivityPhoto();
+
+  showActivityCopyBanner(row);
+
+  document.getElementById('activity-form-submit').textContent = '활동 추가';
+  const cancel = document.getElementById('activity-form-cancel');
+  cancel.textContent = '복사 취소';
+  cancel.style.display = 'inline';
+  clearSuccessActions('activity-form-actions');
+  const msg = document.getElementById('activity-form-message');
+  if (msg) { msg.textContent = ''; msg.className = 'form-message'; }
   form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -1007,6 +1075,7 @@ function exitActivityEditMode() {
   if (!form) return;
   form.reset();
   form.elements['id'].value = '';
+  hideActivityCopyBanner();
 
   existingImageUrl = null;
   existingImagePath = null;
@@ -1017,7 +1086,9 @@ function exitActivityEditMode() {
   renderActivityPhoto();
 
   document.getElementById('activity-form-submit').textContent = '활동 추가';
-  document.getElementById('activity-form-cancel').style.display = 'none';
+  const cancel = document.getElementById('activity-form-cancel');
+  cancel.textContent = '수정 취소';
+  cancel.style.display = 'none';
 }
 
 function setupActivityForm() {
