@@ -3,7 +3,7 @@
 -- 활동기록 29건의 description을 공식적인 개조식 2줄 문구로 통일하는
 -- 일회성 데이터 SQL입니다.
 --
--- ⚠️ 아직 실제 Supabase 프로젝트에 실행되지 않았습니다 — 파일만 작성했습니다.
+-- ✅ 운영 Supabase 프로젝트에 이미 적용된 1회성 데이터 SQL입니다 (2026-09-18 운영 DB 대조 확인). 재실행 금지 — 관리자 화면에서 이후 편집된 데이터가 지워집니다.
 -- Supabase 프로젝트의 SQL Editor에 이 파일 내용을 전부 붙여넣고 Run 하세요.
 --
 -- 이 파일은 public.activities.description 컬럼만 바꿉니다 — title, year,
