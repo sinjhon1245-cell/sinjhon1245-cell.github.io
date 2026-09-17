@@ -79,7 +79,12 @@ function buildStoragePath(folder, file) {
 // output, with no duplicated logic per input method.
 
 const IMAGE_MIN_DIMENSION = 400; // below this a card photo will look soft when displayed — worth a warning, not a hard block
-const IMAGE_MAX_DIMENSION = 2000; // longest side; never upscales past the source
+// Longest side after resize. The largest slot on the site is the home featured
+// card (~546px wide, ×2 for retina ≈ 1100px) and the hero/about frames are
+// narrower still, so 1600px keeps comfortable headroom while capping a
+// generation-tool PNG that would otherwise ship at 1.5–2 MB. Never upscales.
+const IMAGE_MAX_DIMENSION = 1600;
+const IMAGE_WEBP_QUALITY = 0.86;
 
 // Decodes the file to confirm it's a real, undamaged image (a wrong/corrupt
 // MIME type alone wouldn't catch a truncated or non-image file named *.jpg),
@@ -115,24 +120,35 @@ async function prepareImageForUpload(file) {
   return { file: result.file, width: result.width, height: result.height, tooSmall };
 }
 
-// Resizes to a max 2000px longest side (never upscaling) and re-encodes:
-// PNG stays PNG (lossless — keeps transparency, and keeps small screen-capture
-// text crisp instead of blurring it under lossy compression); JPEG/WEBP
-// sources become WEBP at quality 0.88, in the 0.85–0.9 range that keeps fine
-// detail legible rather than chasing minimum file size. Skips the canvas
-// round-trip entirely when there's nothing to change.
+// Samples the drawn canvas for any non-opaque pixel. Only a PNG with real
+// transparency needs to stay PNG; an opaque PNG (a photo or an AI-generated
+// illustration exported as PNG) gains nothing from lossless encoding and ships
+// 10× heavier than WebP. Sampling every 7th pixel keeps this cheap even at
+// 1600px while still catching any transparent region of meaningful size.
+function canvasHasTransparency(ctx, width, height) {
+  try {
+    const data = ctx.getImageData(0, 0, width, height).data;
+    for (let i = 3; i < data.length; i += 4 * 7) {
+      if (data[i] < 250) return true;
+    }
+  } catch (err) {
+    return true; // can't read pixels — be conservative and keep PNG
+  }
+  return false;
+}
+
+// Resizes to a max 1600px longest side (never upscaling) and re-encodes as
+// WebP at IMAGE_WEBP_QUALITY. PNG stays PNG only when it actually uses
+// transparency; every other source (JPEG, WEBP, opaque PNG) becomes WebP so a
+// hero or card photo lands around 100–200 KB instead of 1.5–2 MB. A WEBP
+// source that already fits skips the canvas round-trip entirely.
 async function optimizeImageBitmap(bitmap, originalFile) {
   const longestSide = Math.max(bitmap.width, bitmap.height);
   const scale = longestSide > IMAGE_MAX_DIMENSION ? IMAGE_MAX_DIMENSION / longestSide : 1;
   const targetWidth = Math.max(1, Math.round(bitmap.width * scale));
   const targetHeight = Math.max(1, Math.round(bitmap.height * scale));
 
-  const isPng = originalFile.type === 'image/png';
-  const outputType = isPng ? 'image/png' : 'image/webp';
-  const outputExt = isPng ? 'png' : 'webp';
-  const quality = isPng ? undefined : 0.88;
-
-  if (scale === 1 && originalFile.type === outputType) {
+  if (scale === 1 && originalFile.type === 'image/webp') {
     return { file: originalFile, width: bitmap.width, height: bitmap.height };
   }
 
@@ -142,6 +158,15 @@ async function optimizeImageBitmap(bitmap, originalFile) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas 2d context unavailable');
   ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+
+  const keepPng = originalFile.type === 'image/png' && canvasHasTransparency(ctx, targetWidth, targetHeight);
+  const outputType = keepPng ? 'image/png' : 'image/webp';
+  const outputExt = keepPng ? 'png' : 'webp';
+  const quality = keepPng ? undefined : IMAGE_WEBP_QUALITY;
+
+  if (scale === 1 && originalFile.type === outputType && keepPng) {
+    return { file: originalFile, width: bitmap.width, height: bitmap.height };
+  }
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, outputType, quality));
   if (!blob) throw new Error('canvas encode failed');
@@ -225,6 +250,23 @@ function imgFrameHtml(imageUrl, alt, placeholderText) {
   return '<div class="img-placeholder" style="display:flex">' + escHtml(placeholderText) + '</div>';
 }
 
+// ── Activity fields (single source of truth) ──
+//
+// The six official field names, in display order. These strings are a
+// contract with the database: activities.field is stored verbatim (including
+// the U+00B7 middle dot), the records filter compares with ===, and the admin
+// select writes one of these back. The records page filter chips, the admin
+// <select>, the field counts on the home page and the thumbnail mappings
+// below are all derived from this one array — never edit a copy elsewhere.
+const ACTIVITY_FIELDS = [
+  'AI·SW교육',
+  '과학·융합교육',
+  '프로젝트형 수업',
+  '디지털 기반 수업혁신',
+  '교사 연수',
+  '교육자료 개발'
+];
+
 // ── Activity default thumbnails (public/images/activity-default) ──
 //
 // Decorative placeholders shown ONLY for an activity that has no real
@@ -238,25 +280,37 @@ function imgFrameHtml(imageUrl, alt, placeholderText) {
 // These files are NOT activity photos and their paths are never written back
 // to the database: the choice happens purely at render time. The mapping lives
 // here in exactly one place and is consumed identically by the public records
-// page, the home featured cards, and the admin activity list.
+// page, the home featured cards, and the admin activity list. Each base name
+// ships as "<base>-960.webp" and "<base>-1600.webp" like the curated set.
 const ACTIVITY_DEFAULT_IMAGE_BASE = 'public/images/activity-default/';
 
 const ACTIVITY_DEFAULT_IMAGES = {
-  'AI·SW교육': 'activity-ai-sw.png',
-  '과학·융합교육': 'activity-science.png',
-  '프로젝트형 수업': 'activity-project.png',
-  '디지털 기반 수업혁신': 'activity-digital.png',
-  '교사 연수': 'activity-training.png',
-  '교육자료 개발': 'activity-materials.png'
+  'AI·SW교육': 'activity-ai-sw',
+  '과학·융합교육': 'activity-science',
+  '프로젝트형 수업': 'activity-project',
+  '디지털 기반 수업혁신': 'activity-digital',
+  '교사 연수': 'activity-training',
+  '교육자료 개발': 'activity-materials'
 };
 
 // Trims surrounding whitespace off the field before matching (so " 교사 연수 "
 // still resolves) but does no partial/substring matching beyond that exact
 // lookup. Returns null when the field isn't one of the six official names.
-function getActivityDefaultImage(field) {
+function getActivityDefaultImageSet(field) {
   const trimmed = (field == null ? '' : String(field)).trim();
-  const file = ACTIVITY_DEFAULT_IMAGES[trimmed];
-  return file ? ACTIVITY_DEFAULT_IMAGE_BASE + file : null;
+  const base = ACTIVITY_DEFAULT_IMAGES[trimmed];
+  if (!base) return null;
+  return {
+    src960: ACTIVITY_DEFAULT_IMAGE_BASE + base + '-960.webp',
+    src1600: ACTIVITY_DEFAULT_IMAGE_BASE + base + '-1600.webp'
+  };
+}
+
+// Single-URL convenience (the 960 size) for callers that need one src, such
+// as the shared onerror fallback below.
+function getActivityDefaultImage(field) {
+  const set = getActivityDefaultImageSet(field);
+  return set ? set.src960 : null;
 }
 
 // ── Curated activity images (public/images/activity-images) ──
@@ -350,10 +404,87 @@ function resolveActivityImage(activity) {
   const byField = ACTIVITY_IMAGE_BY_FIELD[activity && activity.field];
   if (byField) return responsiveActivityImage(byField);
 
-  const defaultUrl = getActivityDefaultImage(activity && activity.field);
-  if (defaultUrl) return { type: 'default', url: defaultUrl };
+  const defaultSet = getActivityDefaultImageSet(activity && activity.field);
+  if (defaultSet) return { type: 'default', url: defaultSet.src960, src960: defaultSet.src960, src1600: defaultSet.src1600 };
 
   return null;
+}
+
+// ── Shared card image markup (home featured / records / admin thumb) ──
+//
+// One place that turns resolveActivityImage()'s decision into an <img>, so the
+// three screens can never drift apart on alt text, srcset, lazy loading or the
+// onerror fallback. Rules:
+//   - A real uploaded photo keeps the activity title as alt.
+//   - A curated illustration or a field default is decorative: the card's
+//     heading right below already names the activity, so alt="" + aria-hidden
+//     avoids reading the same title twice and avoids describing a stock
+//     illustration as if it were a photo of the event.
+//   - opts.defer=true writes src/srcset/sizes into data-* attributes so the
+//     caller can hand them to assignDeferredImage() only when the card is
+//     actually shown (records paging, home cards below the fold).
+//   - opts.sizes is the sizes attribute for two-size images (curated/default).
+//   - opts.frameClass is appended to "img-frame".
+function activityImageHtml(activity, opts) {
+  opts = opts || {};
+  const result = resolveActivityImage(activity);
+  if (!result) return '';
+
+  const isReal = result.type === 'real';
+  const prefix = opts.defer ? 'data-' : '';
+  const src = isReal ? result.url : result.src960;
+
+  let srcAttrs = ' ' + prefix + 'src="' + escHtml(src) + '"';
+  if (!isReal && result.src960 && result.src1600) {
+    srcAttrs += ' ' + prefix + 'srcset="' + escHtml(result.src960) + ' 960w, ' + escHtml(result.src1600) + ' 1600w"';
+    if (opts.sizes) srcAttrs += ' ' + prefix + 'sizes="' + escHtml(opts.sizes) + '"';
+  }
+
+  const common =
+    ' alt="' + (isReal ? escHtml(activity.title) : '') + '"' +
+    ' data-field="' + escHtml(activity.field) + '"' +
+    ' decoding="async"' +
+    (isReal ? '' : ' aria-hidden="true"') +
+    ' onerror="handleActivityImageError(this)"';
+
+  const frameClass = 'img-frame' +
+    (opts.frameClass ? ' ' + opts.frameClass : '') +
+    (result.type === 'default' ? ' is-default-thumb' : '');
+
+  return '<div class="' + frameClass + '"><img' + srcAttrs + common + '></div>';
+}
+
+// Promotes a deferred <img> (data-src/data-srcset/data-sizes from
+// activityImageHtml with defer=true) to a real request. Whether the image is
+// currently on the first screen is measured from its own box, not assumed:
+// on-screen images load eagerly (the first one with fetchpriority=high as the
+// likely LCP candidate), off-screen ones get native lazy loading. Repeat calls
+// are no-ops, so revisiting a page never re-fetches.
+function assignDeferredImage(img, isFirstOfGroup) {
+  if (!img || img.getAttribute('src')) return;
+  const box = (img.closest('.img-frame') || img).getBoundingClientRect();
+  const onFirstScreen = box.top < window.innerHeight && box.bottom > 0;
+
+  img.loading = onFirstScreen ? 'eager' : 'lazy';
+  if (onFirstScreen && isFirstOfGroup) img.setAttribute('fetchpriority', 'high');
+
+  const sizes = img.getAttribute('data-sizes');
+  if (sizes) img.setAttribute('sizes', sizes);
+  const srcset = img.getAttribute('data-srcset');
+  if (srcset) img.setAttribute('srcset', srcset);
+  img.src = img.dataset.src;
+}
+
+// records.html deep link: "records.html?year=2025&field=…#a-15". Every part
+// is optional. Used by the home page (featured cards, year summary, field
+// rows) and the about page so all entry points build the same URL shape that
+// records.js reads back on load.
+function recordsUrl(params) {
+  params = params || {};
+  const query = [];
+  if (params.year != null && params.year !== '' && params.year !== '전체') query.push('year=' + encodeURIComponent(params.year));
+  if (params.field && params.field !== '전체') query.push('field=' + encodeURIComponent(params.field));
+  return 'records.html' + (query.length ? '?' + query.join('&') : '') + (params.id != null ? '#a-' + encodeURIComponent(params.id) : '');
 }
 
 // Shared inline onerror handler for every activity <img> (real photo, curated
@@ -414,15 +545,28 @@ function sortActivitiesForDisplay(activities) {
 }
 
 // Overrides a static local <img> (hero photo, about portrait) with a live
-// URL from settings, if one has been uploaded through the admin page.
+// URL from settings, if one has been uploaded through the admin page. The
+// remote file is fetched off-screen first and only swapped in once it has
+// fully loaded, so the visitor never sees the frame go blank (or flash a
+// broken-image icon) between the static placeholder and the real photo. If
+// the remote URL is already what the <img> shows, nothing happens.
 function applyRemoteImage(imgId, url) {
   if (!url) return;
   const img = document.getElementById(imgId);
   if (!img) return;
-  img.src = url;
-  img.style.display = 'block';
-  const placeholder = img.nextElementSibling;
-  if (placeholder && placeholder.classList.contains('img-placeholder')) placeholder.style.display = 'none';
+  if (img.getAttribute('src') === url) return;
+
+  const reveal = function () {
+    img.src = url;
+    img.style.display = 'block';
+    const placeholder = img.nextElementSibling;
+    if (placeholder && placeholder.classList.contains('img-placeholder')) placeholder.style.display = 'none';
+  };
+
+  const probe = new Image();
+  probe.onload = reveal;
+  probe.onerror = function () { /* keep whatever is showing (static file or placeholder) */ };
+  probe.src = url;
 }
 
 // ── Editable site copy (admin.html "사이트 문구 관리" ↔ settings table) ──
@@ -434,6 +578,8 @@ function applyRemoteImage(imgId, url) {
 // brand-new site (or a row nobody has touched) looks exactly like it did
 // before this feature existed.
 const SITE_COPY_DEFAULTS = {
+  home_hero_eyebrow: '송진선 · 인천 초등학교 교사',
+  home_hero_focus: 'AI·SW교육 / 과학·융합교육 / 디지털 기반 수업혁신',
   home_hero_title: '기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간',
   home_hero_description: '교실에서 실천한 수업, 연수와 자료 개발의 과정을 차곡차곡 기록합니다. 기록은 다음 수업의 가장 좋은 재료가 됩니다.',
   home_records_button_label: '활동기록 보기 →',
@@ -446,7 +592,7 @@ const SITE_COPY_DEFAULTS = {
   contact_heading: '함께 나눌 이야기가 있나요?',
   contact_email: 'sinjhon0105@naver.com',
   contact_email_subject: '진진쌤 문의',
-  footer_slogan: '성장을 기록합니다.'
+  footer_slogan: '교실에서 실천한 것을 기록하고, 기록에서 다시 배웁니다.'
 };
 
 // Treats a missing row AND a blank/whitespace-only saved value the same way
@@ -473,6 +619,7 @@ function applyGlobalSiteCopy(settings) {
 
   const email = getSiteCopy(settings, 'contact_email');
   document.querySelectorAll('.footer-email').forEach((el) => { el.textContent = email; });
+  document.querySelectorAll('.footer-year').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
   const aboutEmailRow = document.getElementById('about-contact-email');
   if (aboutEmailRow) aboutEmailRow.textContent = email;

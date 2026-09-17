@@ -4,14 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>진진쌤 · 교육활동 아카이브</title>
-<meta name="description" content="기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간">
+<meta name="description" content="인천 초등학교 교사 송진선(진진쌤)의 교육활동 아카이브. AI·SW교육, 과학·융합(STEAM)교육, 디지털 기반 수업혁신, 교사 연수, 교육자료 개발 활동을 연도·분야별로 기록합니다.">
+<link rel="canonical" href="https://sinjhon1245-cell.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="진진쌤 · 교육활동 아카이브">
+<meta property="og:title" content="진진쌤 · 교육활동 아카이브">
+<meta property="og:description" content="인천 초등학교 교사 송진선(진진쌤)의 AI·SW교육 · 과학·융합교육 · 디지털 기반 수업혁신 활동 기록">
+<meta property="og:url" content="https://sinjhon1245-cell.github.io/">
+<meta property="og:image" content="https://sinjhon1245-cell.github.io/public/images/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="public/images/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://oqoxxasbppbsdaorjbnh.supabase.co">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="public/css/style.css">
 <script src="public/js/site.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="public/js/supabase-client.js"></script>
 </head>
 <body>
+
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
 <header class="site-header">
   <div class="wrap">
@@ -19,52 +36,46 @@
       <span class="brand-name">진진쌤</span>
       <span class="brand-tag">교육활동 아카이브</span>
     </a>
-    <nav class="site-nav">
-      <a class="nav-pill active" href="index.html">홈</a>
+    <nav class="site-nav" aria-label="주 메뉴">
+      <a class="nav-pill active" href="index.html" aria-current="page">홈</a>
       <a class="nav-pill" href="records.html">활동기록</a>
       <a class="nav-pill" href="about.html">소개</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 
   <!-- Hero -->
-  <section class="hero">
+  <section class="hero" aria-labelledby="hero-title">
     <div class="wrap">
       <div class="hero-copy">
-        <h1 class="hero-title">기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간</h1>
+        <p class="hero-eyebrow" id="hero-eyebrow">송진선 · 인천 초등학교 교사</p>
+        <h1 class="hero-title" id="hero-title">기록한 교육활동이 새로운 수업과 성장으로 이어지는 공간</h1>
         <p class="hero-sub">교실에서 실천한 수업, 연수와 자료 개발의 과정을 차곡차곡 기록합니다. 기록은 다음 수업의 가장 좋은 재료가 됩니다.</p>
+        <div class="hero-focus" id="hero-focus" aria-label="핵심 분야">
+          <a class="hero-focus-chip" href="records.html?field=AI%C2%B7SW%EA%B5%90%EC%9C%A1">AI·SW교육</a>
+          <a class="hero-focus-chip" href="records.html?field=%EA%B3%BC%ED%95%99%C2%B7%EC%9C%B5%ED%95%A9%EA%B5%90%EC%9C%A1">과학·융합교육</a>
+          <a class="hero-focus-chip" href="records.html?field=%EB%94%94%EC%A7%80%ED%84%B8%20%EA%B8%B0%EB%B0%98%20%EC%88%98%EC%97%85%ED%98%81%EC%8B%A0">디지털 기반 수업혁신</a>
+        </div>
         <div class="hero-actions">
           <a class="btn-primary" href="records.html">활동기록 보기 →</a>
           <a class="link-underline" href="about.html">진진쌤 소개</a>
         </div>
       </div>
       <div class="hero-media">
-        <div class="img-frame rounded-18 hero-frame">
-          <img id="hero-photo" src="public/images/hero.jpg" alt="대표 교실 사진" onerror="imgFallback(this)">
-          <div class="img-placeholder">대표 교실 사진을 놓아 주세요</div>
+        <div class="img-frame hero-frame">
+          <img id="hero-photo" src="public/images/hero.jpg" alt="송진선 교사" fetchpriority="high" onerror="imgFallback(this)">
+          <div class="img-placeholder">대표 사진을 놓아 주세요</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Keyword strip -->
-  <div class="keyword-strip">
-    <div class="wrap">
-      <span>AI·SW교육</span>
-      <span>과학·융합교육</span>
-      <span>프로젝트형 수업</span>
-      <span>디지털 기반 수업혁신</span>
-      <span>교사 연수</span>
-      <span>교육자료 개발</span>
-    </div>
-  </div>
-
   <!-- Featured -->
-  <section class="featured wrap">
+  <section class="featured wrap" aria-labelledby="featured-title">
     <div class="section-head">
-      <h2 class="section-title">대표 활동</h2>
+      <h2 class="section-title" id="featured-title">대표 활동</h2>
       <a class="section-link" href="records.html">전체 보기 →</a>
     </div>
     <div class="featured-grid" id="featured-grid">
@@ -73,9 +84,9 @@
   </section>
 
   <!-- Specialties -->
-  <section class="specialties wrap">
+  <section class="specialties wrap" aria-labelledby="specialties-title">
     <div class="section-head">
-      <h2 class="section-title">전문 분야</h2>
+      <h2 class="section-title" id="specialties-title">전문 분야</h2>
       <span class="specialties-tagline">배우고, 실천하고, 나눕니다</span>
     </div>
     <div id="specialties-list">
@@ -83,11 +94,14 @@
     </div>
   </section>
 
-  <!-- Timeline -->
-  <section class="timeline-section dark">
+  <!-- Year-by-year summary -->
+  <section class="timeline-section" aria-labelledby="timeline-title">
     <div class="wrap">
       <div class="section-head">
-        <h2 class="section-title">활동 타임라인</h2>
+        <div class="section-head-main">
+          <h2 class="section-title" id="timeline-title">연도별 기록</h2>
+          <span class="section-note" id="timeline-summary"></span>
+        </div>
         <a class="section-link" href="records.html">전체 활동기록 보기 →</a>
       </div>
 
@@ -98,12 +112,12 @@
   </section>
 
   <!-- CTA -->
-  <section class="cta">
+  <section class="cta" id="contact" aria-labelledby="cta-title">
     <div class="wrap">
-      <h2>함께 나눌 이야기가 있나요?</h2>
+      <h2 id="cta-title">함께 나눌 이야기가 있나요?</h2>
       <div class="cta-actions">
-        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=sinjhon0105@naver.com&su=%EC%A7%84%EC%A7%84%EC%8C%A4%20%EB%AC%B8%EC%9D%98" target="_blank" rel="noopener noreferrer">메일 보내기 →</a>
-        <button type="button" class="cta-copy-btn" id="cta-copy-btn">이메일 주소 복사</button>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=sinjhon0105@naver.com&su=%EC%A7%84%EC%A7%84%EC%8C%A4%20%EB%AC%B8%EC%9D%98" target="_blank" rel="noopener noreferrer">메일 보내기 ↗<span class="sr-only"> (새 창에서 열림)</span></a>
+        <button type="button" class="cta-copy-btn" id="cta-copy-btn" aria-live="polite">이메일 주소 복사</button>
       </div>
     </div>
   </section>
@@ -112,9 +126,13 @@
 
 <footer class="site-footer">
   <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">교실에서 실천한 것을 기록하고, 기록에서 다시 배웁니다.</p>
+      <span class="footer-email">sinjhon0105@naver.com</span>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 진진쌤. 교육활동 아카이브</span>
-      <nav class="footer-nav">
+      <span>© <span class="footer-year">2026</span> 진진쌤 · 교육활동 아카이브</span>
+      <nav class="footer-nav" aria-label="푸터 메뉴">
         <a href="index.html">홈</a>
         <a href="records.html">활동기록</a>
         <a href="about.html">소개</a>
@@ -123,6 +141,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+<script src="public/js/supabase-client.js"></script>
 <script src="public/js/site-data.js"></script>
 <script src="public/js/home.js"></script>
 </body>

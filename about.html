@@ -4,14 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>소개 · 진진쌤</title>
-<meta name="description" content="수업을 기록하고, 기록에서 다시 배웁니다.">
+<meta name="description" content="송진선(진진쌤) — 인천 초등학교 교사. AI·SW교육과 과학·융합교육을 중심으로 수업을 실천하고, 교원 연수와 교육자료 개발에 참여합니다. 주요 이력과 연락처.">
+<link rel="canonical" href="https://sinjhon1245-cell.github.io/about.html">
+<meta property="og:type" content="profile">
+<meta property="og:site_name" content="진진쌤 · 교육활동 아카이브">
+<meta property="og:title" content="소개 · 진진쌤 (송진선)">
+<meta property="og:description" content="인천 초등학교 교사 송진선. AI·SW교육 · 과학·융합교육 · 디지털 기반 수업혁신 실천, 교원 연수 강사, 교육자료 개발.">
+<meta property="og:url" content="https://sinjhon1245-cell.github.io/about.html">
+<meta property="og:image" content="https://sinjhon1245-cell.github.io/public/images/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="public/images/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://oqoxxasbppbsdaorjbnh.supabase.co">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="public/css/style.css">
 <script src="public/js/site.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="public/js/supabase-client.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "송진선",
+  "alternateName": "진진쌤",
+  "jobTitle": "초등학교 교사",
+  "description": "AI·SW교육과 과학·융합교육을 중심으로 수업을 실천하고, 교원 연수와 교육자료 개발에 참여하는 인천 초등학교 교사",
+  "url": "https://sinjhon1245-cell.github.io/about.html",
+  "email": "mailto:sinjhon0105@naver.com",
+  "sameAs": ["https://blog.naver.com/jinjinssem"],
+  "knowsAbout": ["AI·SW교육", "과학·융합교육", "디지털 기반 수업혁신", "프로젝트형 수업", "교사 연수", "교육자료 개발"],
+  "address": { "@type": "PostalAddress", "addressRegion": "인천", "addressCountry": "KR" }
+}
+</script>
 </head>
 <body>
+
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
 <header class="site-header">
   <div class="wrap">
@@ -19,25 +51,25 @@
       <span class="brand-name">진진쌤</span>
       <span class="brand-tag">교육활동 아카이브</span>
     </a>
-    <nav class="site-nav">
+    <nav class="site-nav" aria-label="주 메뉴">
       <a class="nav-pill" href="index.html">홈</a>
       <a class="nav-pill" href="records.html">활동기록</a>
-      <a class="nav-pill active" href="about.html">소개</a>
+      <a class="nav-pill active" href="about.html" aria-current="page">소개</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
   <section class="about-section">
     <div class="wrap">
       <div class="about-side">
-        <div class="img-frame rounded-18 about-frame">
-          <img id="about-portrait-photo" src="public/images/about-portrait.jpg" alt="송진선 프로필 사진" onerror="imgFallback(this)">
-          <div class="img-placeholder">프로필 사진을 놓아 주세요</div>
+        <div class="img-frame about-frame">
+          <img id="about-portrait-photo" alt="송진선 프로필 사진" style="display:none">
+          <div class="img-placeholder" style="display:flex">프로필 사진을 놓아 주세요</div>
         </div>
-        <div>
-          <span class="about-name">송진선</span><br>
-          <span class="about-role">초등학교 교사 · 교육활동 아카이버</span>
+        <div class="about-id">
+          <span class="about-name">송진선</span>
+          <span class="about-role">초등학교 교사 · 인천</span>
         </div>
       </div>
 
@@ -52,10 +84,7 @@
         <div class="about-block">
           <h2>주요 이력</h2>
           <div class="about-table" id="career-list">
-            <span class="about-when">2024 – 현재</span><span>에듀테크 선도교사단 · 디지털 기반 수업혁신 연구</span>
-            <span class="about-when">2023 – 현재</span><span>교육청 초등 교원 연수 강사 (AI·SW교육)</span>
-            <span class="about-when">2022 – 현재</span><span>초등 SW·AI 수업자료 공동 개발진</span>
-            <span class="about-when">2019 – 현재</span><span>초등학교 교사 재직</span>
+            <span class="content-loading">불러오는 중…</span>
           </div>
         </div>
 
@@ -70,8 +99,13 @@
           <h2>연락처</h2>
           <div class="about-table">
             <span class="about-when">이메일</span><span id="about-contact-email">sinjhon0105@naver.com</span>
-            <span class="about-when">블로그</span><span><a href="https://blog.naver.com/jinjinssem">blog.naver.com/jinjinssem</a></span>
+            <span class="about-when">블로그</span><span><a class="about-link" href="https://blog.naver.com/jinjinssem" target="_blank" rel="noopener noreferrer">blog.naver.com/jinjinssem<span class="sr-only"> (새 창에서 열림)</span></a></span>
           </div>
+        </div>
+
+        <div class="page-end page-end--inline">
+          <a class="page-end-link" href="records.html">실제 활동 기록 보기 →</a>
+          <a class="page-end-link" href="index.html#contact">함께 나눌 이야기가 있다면 — 연락하기 →</a>
         </div>
       </div>
     </div>
@@ -80,9 +114,13 @@
 
 <footer class="site-footer">
   <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">교실에서 실천한 것을 기록하고, 기록에서 다시 배웁니다.</p>
+      <span class="footer-email">sinjhon0105@naver.com</span>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 진진쌤. 교육활동 아카이브</span>
-      <nav class="footer-nav">
+      <span>© <span class="footer-year">2026</span> 진진쌤 · 교육활동 아카이브</span>
+      <nav class="footer-nav" aria-label="푸터 메뉴">
         <a href="index.html">홈</a>
         <a href="records.html">활동기록</a>
         <a href="about.html">소개</a>
@@ -91,6 +129,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+<script src="public/js/supabase-client.js"></script>
 <script src="public/js/site-data.js"></script>
 <script src="public/js/about.js"></script>
 </body>

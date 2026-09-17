@@ -4,14 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>활동기록 · 진진쌤</title>
-<meta name="description" content="연도와 활동 분야로 기록을 골라 볼 수 있습니다.">
+<meta name="description" content="인천 초등학교 교사 송진선(진진쌤)의 교육활동 기록. AI·SW교육, 과학·융합교육, 디지털 기반 수업혁신, 교사 연수, 교육자료 개발 활동을 연도와 분야로 골라 볼 수 있습니다.">
+<link rel="canonical" href="https://sinjhon1245-cell.github.io/records.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="진진쌤 · 교육활동 아카이브">
+<meta property="og:title" content="활동기록 · 진진쌤">
+<meta property="og:description" content="송진선(진진쌤)의 수업·연수·자료개발·대회 활동을 연도와 분야로 골라 봅니다.">
+<meta property="og:url" content="https://sinjhon1245-cell.github.io/records.html">
+<meta property="og:image" content="https://sinjhon1245-cell.github.io/public/images/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="public/images/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://oqoxxasbppbsdaorjbnh.supabase.co">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="public/css/style.css">
 <script src="public/js/site.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="public/js/supabase-client.js"></script>
 </head>
 <body>
+
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
 
 <header class="site-header">
   <div class="wrap">
@@ -19,47 +36,33 @@
       <span class="brand-name">진진쌤</span>
       <span class="brand-tag">교육활동 아카이브</span>
     </a>
-    <nav class="site-nav">
+    <nav class="site-nav" aria-label="주 메뉴">
       <a class="nav-pill" href="index.html">홈</a>
-      <a class="nav-pill active" href="records.html">활동기록</a>
+      <a class="nav-pill active" href="records.html" aria-current="page">활동기록</a>
       <a class="nav-pill" href="about.html">소개</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 
   <section class="records-head wrap">
     <div class="title-row">
       <h1 class="records-title">활동기록</h1>
-      <span class="records-count">불러오는 중…</span>
+      <span class="records-count" aria-live="polite">불러오는 중…</span>
     </div>
     <p class="records-intro">연도와 활동 분야로 기록을 골라 볼 수 있습니다.</p>
   </section>
 
-  <!-- Filters -->
-  <section class="filters wrap">
+  <!-- Filters (chips are built from data by records.js) -->
+  <section class="filters wrap" aria-label="활동 필터">
     <div class="filter-group">
-      <span class="filter-label">연도</span>
-      <div class="chip-row">
-        <button type="button" class="chip active" data-group="year" data-value="전체">전체</button>
-        <button type="button" class="chip" data-group="year" data-value="2026">2026</button>
-        <button type="button" class="chip" data-group="year" data-value="2025">2025</button>
-        <button type="button" class="chip" data-group="year" data-value="2024">2024</button>
-        <button type="button" class="chip" data-group="year" data-value="2023">2023</button>
-      </div>
+      <span class="filter-label" id="year-label">연도</span>
+      <div class="chip-row" id="year-chips" role="group" aria-labelledby="year-label"></div>
     </div>
     <div class="filter-group">
-      <span class="filter-label">활동 분야</span>
-      <div class="chip-row">
-        <button type="button" class="chip active" data-group="field" data-value="전체">전체</button>
-        <button type="button" class="chip" data-group="field" data-value="AI·SW교육">AI·SW교육</button>
-        <button type="button" class="chip" data-group="field" data-value="과학·융합교육">과학·융합교육</button>
-        <button type="button" class="chip" data-group="field" data-value="프로젝트형 수업">프로젝트형 수업</button>
-        <button type="button" class="chip" data-group="field" data-value="디지털 기반 수업혁신">디지털 기반 수업혁신</button>
-        <button type="button" class="chip" data-group="field" data-value="교사 연수">교사 연수</button>
-        <button type="button" class="chip" data-group="field" data-value="교육자료 개발">교육자료 개발</button>
-      </div>
+      <span class="filter-label" id="field-label">활동 분야</span>
+      <div class="chip-row" id="field-chips" role="group" aria-labelledby="field-label"></div>
     </div>
     <div class="filters-footer">
       <button type="button" class="filter-reset" id="filter-reset" disabled>
@@ -70,7 +73,7 @@
   </section>
 
   <!-- Cards -->
-  <section class="records-section wrap">
+  <section class="records-section wrap" aria-label="활동 목록">
     <div class="records-grid" id="records-grid">
       <p class="content-loading">불러오는 중…</p>
     </div>
@@ -83,13 +86,22 @@
     </div>
   </section>
 
+  <section class="page-end wrap" aria-label="다음으로">
+    <a class="page-end-link" href="about.html">이 기록의 주인공이 궁금하다면 — 소개 보기 →</a>
+    <a class="page-end-link" href="index.html#contact">함께 나눌 이야기가 있다면 — 연락하기 →</a>
+  </section>
+
 </main>
 
 <footer class="site-footer">
   <div class="wrap">
+    <div class="footer-top">
+      <p class="footer-tagline">교실에서 실천한 것을 기록하고, 기록에서 다시 배웁니다.</p>
+      <span class="footer-email">sinjhon0105@naver.com</span>
+    </div>
     <div class="footer-bottom">
-      <span>© 2026 진진쌤. 교육활동 아카이브</span>
-      <nav class="footer-nav">
+      <span>© <span class="footer-year">2026</span> 진진쌤 · 교육활동 아카이브</span>
+      <nav class="footer-nav" aria-label="푸터 메뉴">
         <a href="index.html">홈</a>
         <a href="records.html">활동기록</a>
         <a href="about.html">소개</a>
@@ -98,6 +110,8 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0"></script>
+<script src="public/js/supabase-client.js"></script>
 <script src="public/js/site-data.js"></script>
 <script src="public/js/records.js"></script>
 </body>

@@ -26,6 +26,15 @@
     });
   }
 
+  function renderCareersError(err) {
+    if (!careerList) return;
+    careerList.textContent = '';
+    const el = document.createElement('span');
+    el.className = 'content-error';
+    el.textContent = describeSupabaseError(err);
+    careerList.appendChild(el);
+  }
+
   async function init() {
     try {
       const data = await fetchSiteContent();
@@ -38,16 +47,18 @@
       if (introEl) introEl.textContent = getSiteCopy(data.settings, 'about_intro_text');
       applyGlobalSiteCopy(data.settings);
 
-      // careers may not exist yet on a project that hasn't run the SQL patch —
-      // in that case leave the static HTML fallback in #career-list untouched
-      // rather than replacing it with an error.
-      if (!data.careersError) renderCareers(data.careers);
+      // careers is fetched alongside the other tables but its error is kept
+      // separate (site-data.js) so a problem there never blanks the rest of
+      // the page — it shows its own message in the 주요 이력 block instead.
+      if (data.careersError) renderCareersError(data.careersError);
+      else renderCareers(data.careers);
 
       interestsList.innerHTML = data.interests.length
         ? data.interests.map((i) => '<span>' + escHtml(i.label) + '</span>').join('')
         : '<span class="content-empty">아직 등록된 관심 주제가 없습니다.</span>';
     } catch (err) {
       interestsList.innerHTML = '<span class="content-error">' + escHtml(describeSupabaseError(err)) + '</span>';
+      if (careerList) renderCareersError(err);
     }
   }
 
