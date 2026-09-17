@@ -40,6 +40,8 @@ function clearSuccessActions(containerId) {
 // 'title' fields cap at 150 chars, 'description' fields at 2000, matching the
 // site-wide validation rule; 'email' gets a basic format check instead.
 const COPY_FIELD_TYPES = {
+  home_hero_eyebrow: 'title',
+  home_hero_focus: 'title',
   home_hero_title: 'title',
   home_hero_description: 'description',
   home_records_button_label: 'title',
@@ -59,6 +61,8 @@ const COPY_GROUPS = [
     formId: 'copy-home-form', messageId: 'copy-home-message', actionsId: 'copy-home-actions',
     pages: [PAGES.home],
     fields: [
+      { key: 'home_hero_eyebrow', label: '이름·소속 한 줄' },
+      { key: 'home_hero_focus', label: '핵심 분야' },
       { key: 'home_hero_title', label: '히어로 제목' },
       { key: 'home_hero_description', label: '히어로 설명' },
       { key: 'home_records_button_label', label: '"활동기록 보기" 버튼 문구' },
@@ -87,7 +91,8 @@ const COPY_GROUPS = [
     fields: [
       { key: 'contact_heading', label: '문의 영역 제목' },
       { key: 'contact_email', label: '받는 이메일 주소' },
-      { key: 'contact_email_subject', label: '메일 제목' }
+      { key: 'contact_email_subject', label: '메일 제목' },
+      { key: 'footer_slogan', label: '푸터 한 줄 문구' }
     ]
   }
 ];
@@ -282,7 +287,9 @@ function setupGate() {
 async function uploadToStorage(file, folder) {
   validateImageFile(file);
   const path = buildStoragePath(folder, file);
-  const { error } = await supabaseClient.storage.from('photos').upload(path, file, { cacheControl: '3600', upsert: false });
+  // Every upload gets a unique, timestamped path (buildStoragePath), so the
+  // file itself never changes under the same URL — it can be cached for a year.
+  const { error } = await supabaseClient.storage.from('photos').upload(path, file, { cacheControl: '31536000', upsert: false });
   if (error) throw new Error(describeSupabaseError(error));
   const { data } = supabaseClient.storage.from('photos').getPublicUrl(path);
   return { url: data.publicUrl, path };
@@ -1070,11 +1077,19 @@ function enterActivityCopyMode(row) {
   form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// The add form defaults to the current year (not a year baked into the HTML
+// that would need a redeploy every January).
+function setDefaultActivityYear() {
+  const form = document.getElementById('activity-form');
+  if (form && form.elements['year']) form.elements['year'].value = new Date().getFullYear();
+}
+
 function exitActivityEditMode() {
   const form = document.getElementById('activity-form');
   if (!form) return;
   form.reset();
   form.elements['id'].value = '';
+  setDefaultActivityYear();
   hideActivityCopyBanner();
 
   existingImageUrl = null;
@@ -1095,6 +1110,14 @@ function setupActivityForm() {
   const form = document.getElementById('activity-form');
   const message = document.getElementById('activity-form-message');
   let isSubmitting = false;
+
+  // The field <select> is built from ACTIVITY_FIELDS (site-data.js), the same
+  // list the public filter chips derive from, so the two can never disagree.
+  const fieldSelect = form.elements['field'];
+  if (fieldSelect) {
+    fieldSelect.innerHTML = ACTIVITY_FIELDS.map((f) => '<option>' + escHtml(f) + '</option>').join('');
+  }
+  setDefaultActivityYear();
 
   document.getElementById('activity-form-cancel').addEventListener('click', exitActivityEditMode);
 
@@ -1144,7 +1167,17 @@ function setupActivityForm() {
       }
 
       const featured = fd.get('featured') === 'on';
-      const otherFeaturedCount = currentData.activities.filter((a) => a.featured && String(a.id) !== String(editingId)).length;
+      const existingRow = editingId ? currentData.activities.find((a) => String(a.id) === String(editingId)) : null;
+      const otherFeatured = currentData.activities.filter((a) => a.featured && String(a.id) !== String(editingId));
+      const maxFeaturedOrder = otherFeatured.reduce((m, a) => Math.max(m, Number(a.featured_order) || 0), 0);
+      // An already-featured activity keeps its position on the home page when
+      // it is merely re-saved (a title fix or a new photo must not reorder
+      // 대표 활동); only a newly featured activity goes to the end of the list.
+      const featuredOrder = !featured
+        ? null
+        : (existingRow && existingRow.featured && existingRow.featured_order != null)
+          ? existingRow.featured_order
+          : maxFeaturedOrder + 1;
 
       const row = {
         title, year,
@@ -1155,7 +1188,7 @@ function setupActivityForm() {
         image_url: imageUrl,
         image_path: imagePath,
         featured,
-        featured_order: featured ? otherFeaturedCount + 1 : null
+        featured_order: featuredOrder
       };
 
       if (editingId) {
@@ -1513,7 +1546,12 @@ function setupPhotoSlot({ key, folder, inputId, imgId, buttonId, messageId, acti
     let newUpload = null;
 
     try {
-      newUpload = await uploadToStorage(file, folder);
+      // Same validate → decode → resize/re-encode path as activity photos, so a
+      // 1.5 MB generation-tool PNG lands as a ~150 KB WebP sized for its slot.
+      message.textContent = '사진 최적화 중…';
+      const prepared = await prepareImageForUpload(file);
+      message.textContent = '업로드 중…';
+      newUpload = await uploadToStorage(prepared.file, folder);
 
       const oldRow = currentData.settingsRows.find((r) => r.key === key);
       const oldPath = oldRow ? oldRow.path : null;

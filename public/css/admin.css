@@ -1,8 +1,8 @@
 /* 진진쌤 사이트 — 관리자 도구 전용 스타일 (공개 사이트와 분리) */
 
-/* style.css sets body { min-width: 1100px } for the public site's fixed
-   desktop layout — override it here so the admin tool itself stays usable
-   on mobile widths without touching the public design. */
+/* style.css sets body { min-width: var(--page-min-width) } (1000px) for the
+   public site's fixed desktop layout — override it here so the admin tool
+   itself stays usable on mobile widths without touching the public design. */
 body.admin-body {
   background: #F7F6F2;
   min-width: 0;
@@ -495,11 +495,18 @@ body.admin-body {
   gap: 16px;
 }
 
+/* A real <button> (keyboard reachable) styled as the quiet underlined link it
+   always looked like. */
 .cancel-edit-link {
   cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
   color: #666666;
+  background: none;
+  border: 0;
   border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 0;
 }
 
 .form-success-actions {
