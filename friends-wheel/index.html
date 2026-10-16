@@ -1,23 +1,149 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>우리들의 실시간 돌림판</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f9f6f2;color:#272626;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}main{max-width:530px;margin:auto;padding:28px 18px 50px;text-align:center}.eyebrow{font-size:12px;font-weight:750;letter-spacing:2px;color:#ac7c62}.title{font-size:29px;letter-spacing:-1.4px;margin:9px 0 7px}.sub{font-size:13px;color:#8b817b;margin:0 0 26px}.stage{background:white;border-radius:28px;padding:24px 12px 20px;box-shadow:0 9px 38px #9d87721a}.wheel-wrap{width:min(83vw,370px);height:min(83vw,370px);margin:0 auto 22px;position:relative}.wheel{position:absolute;inset:8px;border:9px solid #fff;border-radius:50%;box-shadow:0 0 0 3px #e7dbd2,0 8px 19px #0001;background:conic-gradient(from -36deg,#f6cabb 0deg 72deg,#f6dfaa 72deg 144deg,#bfddc8 144deg 216deg,#bfd7ee 216deg 288deg,#d9c8e9 288deg 360deg);transform:rotate(0deg);will-change:transform}.wheel .name{position:absolute;left:50%;top:50%;width:65px;margin-left:-32.5px;margin-top:-14px;font-size:23px;font-weight:900;letter-spacing:-1px;color:#3e3430}.pointer{position:absolute;left:50%;top:0;transform:translateX(-50%);border-left:15px solid transparent;border-right:15px solid transparent;border-top:29px solid #44352f;z-index:3;filter:drop-shadow(0 2px 2px #0003)}.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border:5px solid #f8f4ee;border-radius:50%;width:74px;height:74px;display:grid;place-items:center;font-size:16px;font-weight:900;box-shadow:0 2px 10px #0002}.result{font-size:23px;font-weight:900;min-height:39px;letter-spacing:-.6px}.status{font-size:12px;margin:6px 0 18px;color:#827974}.action{border:0;width:min(100%,310px);background:#dd7459;color:#fff;padding:16px;border-radius:15px;font-size:17px;font-weight:850;cursor:pointer}.action:disabled{background:#c5b5ae;cursor:default}.tags{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:18px 0 4px}.tag{background:#faf3ec;padding:7px 13px;border-radius:30px;font-size:13px;font-weight:750}.history{text-align:left;background:white;border-radius:22px;margin-top:16px;padding:19px 21px;box-shadow:0 6px 24px #9d877215}.history h2{font-size:15px;margin:0 0 12px}.item{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid #f1eeeb;font-size:14px}.item strong{color:#d3654d}.muted{color:#9a918b}.adminnote{font-size:12px;color:#a08c80;margin-top:10px}.link{border:1px solid #e4d9d1;background:#fff;color:#50443d;padding:11px 14px;border-radius:12px;font-weight:700;cursor:pointer;margin:14px 0 0}.tiny{font-size:11px;color:#9b9188;margin-top:16px}
-</style></head><body><main><div class="eyebrow">TOGETHER • RANDOM</div><h1 class="title">우리들의 돌림판 🎡</h1><p class="sub">추 · 현 · 송 · 김 · 노 / 5명 무제한 추첨</p>
-<section class="stage"><div class="wheel-wrap"><div class="wheel" id="wheel"></div><div class="pointer"></div><div class="hub">GO!</div></div><div class="result" id="result" aria-live="polite">준비 완료!</div><div class="status" id="status" aria-live="polite">연결 중…</div><button class="action" id="spin" hidden>🎲 돌림판 돌리기</button><div class="tags" id="counts"></div></section><button class="link" id="copy">🔗 친구에게 관람 링크 복사</button><p class="adminnote" id="adminnote"></p><section class="history"><h2>🕒 추첨 기록 <span id="total"></span></h2><div id="history" class="muted">아직 추첨 기록이 없어요.</div></section><div class="tiny">링크를 열어두면 자동으로 결과를 받아요 · 재접속해도 기록 유지</div></main>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6f9">
+<title>5인 돌림판 | 새 디자인</title>
+<style>
+:root{--ink:#172234;--muted:#68748a;--muted2:#8490a3;--line:#e8edf3;--base:#f4f6f9;--accent:#385bdb;--white:#fff;--red:#aa4d52}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--base);color:var(--ink);font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all}
+button{font:inherit;-webkit-tap-highlight-color:transparent;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:3px solid #7e9aff;outline-offset:3px}
+.shell{max-width:1056px;margin:0 auto;padding:28px 24px 78px}
+.brandbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:37px}
+.brand{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:850;letter-spacing:.1px}
+.mark{width:33px;height:33px;display:grid;place-items:center;border-radius:11px;background:var(--ink);color:#fff;font-size:22px;font-weight:750;line-height:1}
+.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #dde4ed;background:#fff;color:#5f6c7f;padding:8px 11px;border-radius:99px;font-size:12px;font-weight:750;white-space:nowrap}
+.dot{width:7px;height:7px;background:#5486ef;border-radius:50%;display:inline-block;flex:none}
+.head{margin-bottom:27px}.eyebrow{margin:0 0 9px;color:#4e66a9;font-weight:800;font-size:12px;letter-spacing:1.7px}.head h1{font-size:clamp(29px,4vw,41px);line-height:1.17;letter-spacing:-1.9px;font-weight:850;margin:0 0 12px}.head p{margin:0;font-size:15px;line-height:1.7;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;align-items:start;gap:18px}
+.stage{border:1px solid var(--line);background:#fff;box-shadow:0 10px 45px #142d520a;border-radius:25px;padding:25px 20px 27px;text-align:center;min-width:0}
+.stagehead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 4px 22px}
+.stagehead strong{font-size:15px;font-weight:800;letter-spacing:-.3px}.smalltag{border:1px solid var(--line);background:#f7f9fc;color:#59677d;border-radius:100px;padding:7px 11px;font-size:12px;font-weight:700}
+.wheelbox{width:min(100%,385px);aspect-ratio:1;margin:0 auto 22px;position:relative;padding:11px;filter:drop-shadow(0 15px 17px #20386c18)}
+.wheel-rotator{width:100%;height:100%;border-radius:50%;overflow:hidden;background:#dae4f0;border:8px solid white;outline:2px solid #dee6ef;transform:rotate(0deg);will-change:transform}
+.wheel-svg{width:100%;height:100%;display:block}
+.wheel-svg text{font-family:"Pretendard Variable",Pretendard,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;font-size:38px;font-weight:850;fill:#fff;paint-order:stroke;stroke:#14283f1c;stroke-width:1px;pointer-events:none}
+.pointer{position:absolute;z-index:3;top:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:17px solid transparent;border-right:17px solid transparent;border-top:31px solid var(--ink);filter:drop-shadow(0 2px 2px #17223424)}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:77px;height:77px;border-radius:50%;border:7px solid #f4f6f9;background:#fff;box-shadow:0 3px 14px #17223425;display:flex;align-items:center;justify-content:center;z-index:2;font-size:16px;font-weight:900;letter-spacing:.5px;color:#253b61}
+.resultgroup{min-height:99px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:1px 0 16px}
+.result-kicker{font-size:12px;letter-spacing:.7px;font-weight:800;color:#7d879b;margin:0 0 4px}
+.resultname{min-height:48px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:25px;line-height:1.4;font-weight:850;letter-spacing:-1px;color:var(--ink)}
+.resultname .winner{font-size:42px;line-height:1;font-weight:900;letter-spacing:-1.6px;color:#3658d6}
+.action{width:min(100%,365px);height:57px;border:0;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:10px;color:#fff;background:#385bdb;font-size:16px;font-weight:800;box-shadow:0 9px 18px #385bdb30;transition:transform .15s,background .15s,box-shadow .15s}
+.action:hover:not(:disabled){background:#2e4fc5;transform:translateY(-1px);box-shadow:0 13px 22px #385bdb30}.action:active:not(:disabled){transform:translateY(1px)}.action:disabled{background:#aab4ce;box-shadow:none;cursor:default}
+.subnote{font-size:12px;color:#8390a0;margin:15px 0 0;min-height:18px;line-height:1.45}
+.aside{display:flex;flex-direction:column;gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:21px;padding:21px 21px 22px;box-shadow:0 6px 20px #142d5205}
+.cardtop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}
+.cardtop h2{font-size:16px;letter-spacing:-.55px;margin:0;font-weight:850}
+.cardtop .right{font-size:12px;color:#8b96a8;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0}
+.stat{min-width:0;text-align:center;background:#f6f8fb;border-radius:12px;padding:14px 0 11px;display:flex;flex-direction:column;gap:4px}
+.stat dt{font-size:14px;color:#67768e;font-weight:750}.stat dd{margin:0;font-weight:850;font-size:25px;line-height:1.2;letter-spacing:-1px;color:#27374d}.stat .unit{font-size:11px;font-weight:650;letter-spacing:0;color:#8390a0;margin-left:1px}
+.history-card{padding-bottom:15px}
+.history-summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:16px;font-weight:850;letter-spacing:-.55px;padding:0 0 5px}
+.history-summary::-webkit-details-marker{display:none}.history-summary .sumright{font-size:12px;font-weight:750;color:#9aa3af;display:flex;align-items:center;gap:7px}.chevron{border:solid #8a96a5;border-width:0 1.7px 1.7px 0;display:inline-block;padding:4px;transform:rotate(45deg);transition:transform .2s;margin-top:-3px}details:not([open]) .chevron{transform:rotate(-135deg);margin-top:4px}
+.record-list{margin:13px 0 0;padding:0;list-style:none;max-height:281px;overflow-y:auto}.record{display:flex;gap:8px;align-items:center;border-top:1px solid #edf0f4;padding:13px 0;font-size:13px}.record-round{color:#8b98a9;white-space:nowrap;font-variant-numeric:tabular-nums}.record-time{color:#9ca7b5;font-size:11px;white-space:nowrap;margin-left:auto}.record-name{margin-left:auto;font-size:14px;font-weight:850;color:#254baf}.record-time+.record-name{margin-left:6px}
+.empty{color:#95a1b0;font-size:13px;padding:23px 0 18px;text-align:center;line-height:1.7}
+.admin-card{border-color:#e6e9f1}.admin-card p{font-size:12px;line-height:1.75;color:#7b879a;margin:0 0 12px}
+.reset{width:100%;height:43px;border:1px solid #eed8dc;border-radius:12px;background:#fffafb;color:#ad5360;font-size:13px;font-weight:850;transition:background .15s}.reset:hover:not(:disabled){background:#ffeff1}.reset:disabled{opacity:.6;cursor:not-allowed}
+.copy{border:1px solid #dfe5ef;background:#fff;width:100%;height:42px;border-radius:11px;color:#485b78;font-size:13px;font-weight:800;margin-top:10px}
+.foot{font-size:12px;line-height:1.7;color:#97a1ae;text-align:center;margin:25px auto 0}
+dialog{border:1px solid var(--line);border-radius:22px;max-width:360px;width:calc(100% - 34px);padding:24px;box-shadow:0 24px 80px #15203334;color:var(--ink);font-family:inherit}dialog::backdrop{background:#0c1420a0;backdrop-filter:blur(3px)}dialog h2{font-size:21px;letter-spacing:-.8px;margin:0 0 10px}dialog p{font-size:14px;line-height:1.7;margin:0;color:#69768b}dialog .modal-actions{display:flex;gap:9px;margin-top:24px}dialog button{flex:1;border-radius:11px;height:46px;font-size:14px;font-weight:800;border:1px solid #e3e8ef;background:#fff;color:#536176}dialog button.danger{background:#ae4e5a;color:#fff;border:0}
+@media(max-width:760px){.shell{max-width:570px;padding:22px 17px 65px}.brandbar{margin-bottom:30px}.layout{display:flex;flex-direction:column;gap:14px}.layout>*{width:100%}.stage{padding:19px 16px 24px}.stagehead{margin:0 0 14px}.head{margin-bottom:22px}.head h1{font-size:34px}.aside{gap:14px}.card{padding:19px}.wheelbox{width:min(100%,370px);margin-bottom:14px}}
+@media(max-width:380px){.shell{padding-left:13px;padding-right:13px}.head h1{font-size:31px}.stage{padding:17px 12px 22px}.wheelbox{width:min(100%,335px)}.wheel-svg text{font-size:36px}.stat{padding:12px 0}.stat dt{font-size:13px}.stat dd{font-size:23px}.card{padding:17px}.brand{font-size:13px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="brandbar">
+    <div class="brand"><div class="mark" aria-hidden="true">↻</div><span>Spin Room</span></div>
+    <span class="badge"><span class="dot" aria-hidden="true"></span><span id="mode-text">디자인 미리보기</span></span>
+  </header>
+  <div class="head"><div class="eyebrow">THE RANDOM PICKER</div><h1>오늘은 누구 차례?</h1><p>추 · 현 · 송 · 김 · 노<br>다섯 명 중 단 한 명, 공평하게 뽑아요.</p></div>
+  <div class="layout">
+    <main class="stage">
+      <div class="stagehead"><strong>실시간 돌림판</strong><span class="smalltag">5명 참여</span></div>
+      <div class="wheelbox">
+        <div class="wheel-rotator" id="rotator"><svg id="wheel-svg" class="wheel-svg" viewBox="0 0 420 420" aria-label="추, 현, 송, 김, 노 다섯 명의 돌림판" role="img"></svg></div>
+        <div class="pointer" aria-hidden="true"></div><div class="hub" aria-hidden="true">PICK</div>
+      </div>
+      <div class="resultgroup" aria-live="polite" aria-atomic="true"><div class="result-kicker" id="result-kicker">RESULT</div><div class="resultname" id="result">첫 번째 추첨을 시작해요</div></div>
+      <button class="action" id="spin" type="button"><span aria-hidden="true" style="font-size:21px;line-height:1">↻</span> <span id="spin-label">돌림판 돌리기</span></button>
+      <p class="subnote" id="note">미리보기에서 여러 번 돌려볼 수 있어요.</p>
+    </main>
+    <aside class="aside">
+      <section class="card"><div class="cardtop"><h2>누적 당첨 횟수</h2><span class="right" id="total">총 0회</span></div><dl class="stats" id="stats"></dl></section>
+      <details class="card history-card" open id="history-details"><summary class="history-summary"><span>추첨 기록</span><span class="sumright"><span id="history-count">0건</span><i class="chevron" aria-hidden="true"></i></span></summary><ol class="record-list" id="history-list"></ol></details>
+      <section class="card admin-card" id="admin-card"><div class="cardtop" style="margin-bottom:9px"><h2>관리자 설정</h2><span class="right">ADMIN</span></div><p id="reset-desc">초기화하면 미리보기의 모든 당첨 결과와 횟수가 삭제돼요.</p><button class="reset" id="reset" type="button">추첨 기록 초기화</button><button class="copy" id="copy" type="button" hidden>친구에게 관람 링크 복사 ↗</button></section>
+    </aside>
+  </div>
+  <div class="foot" id="foot">디자인 체험용 파일입니다. 이 파일의 결과와 초기화는 실제 공유 사이트에 반영되지 않습니다.</div>
+</div>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title"><h2 id="confirm-title">모든 기록을 초기화할까요?</h2><p>지금까지의 당첨 기록과 사람별 당첨 횟수가 모두 사라져요. 이 작업은 되돌릴 수 없어요.</p><div class="modal-actions"><button type="button" id="cancel">취소</button><button class="danger" type="button" id="confirm-reset">초기화하기</button></div></dialog>
 <script>
-const room='d09b7c56-833a-435e-8313-03223e38edae', players=['추','현','송','김','노'];
-const api='https://rhkyvdnquiserrrjjeoz.supabase.co/functions/v1/friends-wheel';const token=new URLSearchParams(location.hash.slice(1)).get('admin');const admin=!!token;
-const wheel=document.getElementById('wheel'),spin=document.getElementById('spin'),result=document.getElementById('result'),status=document.getElementById('status');
-const history=document.getElementById('history'),counts=document.getElementById('counts'),total=document.getElementById('total');
-const radius=140;let latest=0,busy=false,finishTimer=null,ready=false,angle=0,requesting=false;
-players.forEach((name,i)=>{let t=document.createElement('span');t.className='name';t.textContent=name;t.style.transform='rotate('+(i*72)+'deg) translateY(-'+radius+'px) rotate('+(-i*72)+'deg)';wheel.append(t)});
-spin.hidden=!admin;document.getElementById('adminnote').textContent=admin?'🔒 관리자 모드 · 이 주소는 다른 사람에게 공유하지 마세요.':'👀 관람 모드 · 관리자만 돌릴 수 있어요.';
-document.getElementById('copy').addEventListener('click',async()=>{const u=location.origin+location.pathname;try{await navigator.clipboard.writeText(u);document.getElementById('copy').textContent='✅ 관람 링크 복사 완료'}catch{prompt('아래 링크를 복사하세요',u)}});
-function render(data){const list=data.spins||[];total.textContent='('+list.length+'회)';const nums=players.map(p=>list.filter(s=>s.winner_name===p).length);counts.replaceChildren();players.forEach((p,i)=>{let e=document.createElement('span');e.className='tag';e.textContent=p+' '+nums[i]+'회';counts.append(e)});history.replaceChildren();list.slice(0,25).forEach(s=>{const e=document.createElement('div');e.className='item';const a=document.createElement('span');a.textContent=s.spin_number+'번째 추첨';const b=document.createElement('strong');b.textContent=s.winner_name+' 당첨';e.append(a,b);history.append(e)});if(!list.length)history.textContent='아직 추첨 기록이 없어요.';
-if(!list.length){if(!ready){result.textContent='준비 완료!';status.textContent='● 실시간 연결 중';}ready=true;spin.disabled=false;return}
-const s=list[0],end=new Date(s.started_at).getTime()+s.duration_ms;const remaining=end-Date.now();const isNew=s.id!==latest;
-if(isNew){latest=s.id;clearTimeout(finishTimer);wheel.style.transition='none';wheel.style.transform='rotate('+s.start_degrees+'deg)';void wheel.offsetWidth;angle=s.target_degrees;if(remaining>0){wheel.style.transition='transform '+remaining+'ms cubic-bezier(.13,.72,.1,1)';wheel.style.transform='rotate('+angle+'deg)';busy=true;result.textContent='🎲 돌아가는 중…';status.textContent='모든 친구에게 같은 결과가 전달돼요';finishTimer=setTimeout(()=>{busy=false;result.textContent='🎉 '+s.winner_name+' 당첨!';status.textContent='모두에게 결과가 공유됐어요';spin.disabled=false},remaining+120)}else{wheel.style.transform='rotate('+angle+'deg)';result.textContent='🎉 '+s.winner_name+' 당첨!';busy=false;status.textContent='● 결과 동기화 완료';}}
-spin.disabled=busy||requesting;ready=true;
+(()=>{
+'use strict';
+const names=['추','현','송','김','노'];
+const sectorColors=['#3154A0','#4E62BB','#157A83','#655B9F','#326C73'];
+const root=document.getElementById('wheel-svg'),rotator=document.getElementById('rotator');
+const spinBtn=document.getElementById('spin'), spinLabel=document.getElementById('spin-label'), result=document.getElementById('result'), kicker=document.getElementById('result-kicker');
+const note=document.getElementById('note'), stats=document.getElementById('stats'), total=document.getElementById('total'), hist=document.getElementById('history-list'), count=document.getElementById('history-count');
+const resetBtn=document.getElementById('reset'),dlg=document.getElementById('confirm-dialog');
+const isLive=location.hostname==='sinjhon1245-cell.github.io';
+const token=new URLSearchParams(location.hash.slice(1)).get('admin');
+const isAdmin=!isLive || (typeof token==='string'&&token.length===64);
+const API='https://rhkyvdnquiserrrjjeoz.supabase.co/functions/v1/friends-wheel';
+const room='d09b7c56-833a-435e-8313-03223e38edae';
+const storeKey='friends-wheel-design-v2';
+let records=[],currentAngle=0,raf=0,busy=false,loading=false,latestServerId=null;
+const SVG='http://www.w3.org/2000/svg';
+function node(name,attrs){const el=document.createElementNS(SVG,name);Object.entries(attrs).forEach(([key,value])=>el.setAttribute(key,String(value)));return el}
+const labels=[];
+function polar(deg,r){const a=deg*Math.PI/180;return {x:210+Math.sin(a)*r,y:210-Math.cos(a)*r}}
+function buildWheel(){
+  for(let i=0;i<5;i++){
+    const m=i*72,s=polar(m-36,208),e=polar(m+36,208);
+    const path=node('path',{d:`M 210 210 L ${s.x} ${s.y} A 208 208 0 0 1 ${e.x} ${e.y} Z`,fill:sectorColors[i],stroke:'#ffffff','stroke-width':2.5});
+    root.append(path);
+    const p=polar(m,137),text=node('text',{x:p.x,y:p.y,'text-anchor':'middle','dominant-baseline':'central'});
+    text.textContent=names[i];root.append(text);labels.push({el:text,x:p.x,y:p.y});
+  }
+  root.append(node('circle',{cx:210,cy:210,r:207,fill:'none',stroke:'#ffffff','stroke-width':4}));
 }
-async function sync(){try{const r=await fetch(api+'/state?room='+room,{cache:'no-store'});if(!r.ok)throw Error('네트워크 오류');const d=await r.json();render(d)}catch(e){status.textContent='연결 재시도 중…';spin.disabled=true}}
-spin.addEventListener('click',async()=>{if(busy||requesting)return;requesting=true;spin.disabled=true;status.textContent='추첨 요청 중…';try{const r=await fetch(api+'/spin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,token})});const x=await r.json();if(!r.ok)throw Error(x.error||'잠시 후 다시 시도하세요');await sync()}catch(e){status.textContent=e.message}finally{requesting=false;if(!busy)spin.disabled=false}});
-sync();setInterval(sync,1100);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
-</script></body></html>
+function angleTo(deg){currentAngle=deg;rotator.style.transform=`rotate(${deg}deg)`;const a=-(deg%360);for(const l of labels)l.el.setAttribute('transform',`rotate(${a} ${l.x} ${l.y})`)}
+function ease(t){return 1-Math.pow(1-t,4)}
+function animate(start,end,duration,onDone,progressOffset=0){cancelAnimationFrame(raf);busy=true;spinBtn.disabled=true;spinLabel.textContent='돌아가는 중…';result.textContent='누가 나올까요?';kicker.textContent='PICKING';const started=performance.now()-progressOffset;
+  const tick=()=>{const t=Math.min(1,Math.max(0,(performance.now()-started)/duration));angleTo(start+(end-start)*ease(t));if(t<1){raf=requestAnimationFrame(tick)}else{busy=false;spinBtn.disabled=false;spinLabel.textContent='다시 돌리기';onDone()}};
+  raf=requestAnimationFrame(tick)
+}
+function random(max){if(crypto?.getRandomValues){const x=new Uint32Array(1);crypto.getRandomValues(x);return x[0]%max}return Math.floor(Math.random()*max)}
+function isoTime(time){return new Intl.DateTimeFormat('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(time))}
+function render(){
+  total.textContent=`총 ${records.length}회`;count.textContent=`${records.length}건`;
+  stats.replaceChildren();for(const n of names){const cell=document.createElement('div');cell.className='stat';const dt=document.createElement('dt');dt.textContent=n;const dd=document.createElement('dd');dd.textContent=String(records.filter(x=>x.name===n).length);const unit=document.createElement('span');unit.className='unit';unit.textContent='회';dd.append(unit);cell.append(dt,dd);stats.append(cell)}
+  hist.replaceChildren();if(!records.length){const empty=document.createElement('li');empty.className='empty';empty.textContent='아직 추첨 기록이 없어요.';hist.append(empty)}else{
+    [...records].reverse().slice(0,30).forEach((rec,index)=>{const li=document.createElement('li');li.className='record';const round=document.createElement('span');round.className='record-round';round.textContent=`#${rec.round||records.length-index}`;const time=document.createElement('span');time.className='record-time';time.textContent=isoTime(rec.at);const picked=document.createElement('strong');picked.className='record-name';picked.textContent=`${rec.name} 당첨`;li.append(round,time,picked);hist.append(li)})
+  }
+}
+function showWinner(name){kicker.textContent='SELECTED';result.replaceChildren();const big=document.createElement('span');big.className='winner';big.textContent=name;const small=document.createElement('span');small.textContent='당첨!';result.append(big,small)}
+function saveDemo(){try{localStorage.setItem(storeKey,JSON.stringify(records))}catch{}}
+function restoreDemo(){try{const data=JSON.parse(localStorage.getItem(storeKey)||'[]');if(Array.isArray(data))records=data.filter(x=>names.includes(x.name)&&typeof x.at==='number').slice(-300)}catch{};render();if(records.length){const last=records.at(-1);angleTo((360-last.index*72)%360);showWinner(last.name);spinLabel.textContent='다시 돌리기'}}
+async function syncLive(){try{const resp=await fetch(`${API}/state?room=${room}`,{cache:'no-store'});if(!resp.ok)throw Error('상태 조회 실패');const data=await resp.json();records=(data.spins||[]).slice().reverse().map(x=>({name:x.winner_name,index:x.winner_index,at:Date.parse(x.started_at),round:x.spin_number}));render();const last=(data.spins||[])[0];if(last&&last.id!==latestServerId){latestServerId=last.id;const end=Date.parse(last.started_at)+last.duration_ms;if(Date.now()<end){const diff=Date.now()-Date.parse(last.started_at);animate(last.start_degrees,last.target_degrees,last.duration_ms,()=>showWinner(last.winner_name),Math.max(0,diff))}else{angleTo(last.target_degrees);showWinner(last.winner_name);spinLabel.textContent='다시 돌리기'}}else if(!last){cancelAnimationFrame(raf);busy=false;spinBtn.disabled=false;angleTo(0);kicker.textContent='RESULT';result.textContent='첫 번째 추첨을 시작해요';spinLabel.textContent='돌림판 돌리기';latestServerId=null}note.textContent=isAdmin?'관리자 화면 · 결과가 친구들에게 자동으로 공유돼요.':'관람 중 · 당첨 결과가 자동으로 업데이트돼요.'}catch(err){note.textContent='연결 상태를 확인하는 중이에요. 잠시 후 다시 시도합니다.';console.error(err)}}
+function spinDemo(){if(busy)return;const i=random(5),desired=(360-i*72)%360,start=currentAngle,end=start+360*6+(desired-((start%360)+360)%360+360)%360;note.textContent='룰렛이 회전하고 있어요.';animate(start,end,4600,()=>{const entry={name:names[i],index:i,at:Date.now(),round:records.length+1};records.push(entry);saveDemo();render();showWinner(entry.name);note.textContent='원하는 만큼 다시 돌릴 수 있어요.'})}
+async function spinLive(){if(busy||loading)return;loading=true;spinBtn.disabled=true;note.textContent='추첨 요청 중…';try{const response=await fetch(`${API}/spin`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({room,token})});const data=await response.json();if(!response.ok)throw Error(data.error||'추첨 실패');await syncLive()}catch(e){note.textContent=e.message}finally{loading=false;if(!busy)spinBtn.disabled=false}}
+spinBtn.addEventListener('click',()=>isLive?spinLive():spinDemo());
+const adminCard=document.getElementById('admin-card');const copyBtn=document.getElementById('copy');
+buildWheel();angleTo(0);
+if(isLive){document.getElementById('mode-text').textContent=isAdmin?'관리자 접속':'실시간 관람';adminCard.hidden=!isAdmin;spinBtn.hidden=!isAdmin;copyBtn.hidden=!isAdmin;resetBtn.disabled=true;resetBtn.textContent='서버 초기화 기능 준비 중';document.getElementById('reset-desc').textContent='실시간 공유 기록 초기화는 서버 권한 설정을 완료한 후 사용할 수 있어요.';document.getElementById('foot').textContent='친구들 모두 같은 추첨 결과를 확인할 수 있어요. 네트워크 상태에 따라 반영 시간이 다를 수 있어요.';syncLive();setInterval(syncLive,1400);document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncLive()})}else{restoreDemo()}
+resetBtn.addEventListener('click',()=>{if(busy||isLive)return;dlg.showModal()});document.getElementById('cancel').addEventListener('click',()=>dlg.close());document.getElementById('confirm-reset').addEventListener('click',()=>{if(busy){dlg.close();return}cancelAnimationFrame(raf);records=[];try{localStorage.removeItem(storeKey)}catch{};angleTo(0);render();kicker.textContent='RESULT';result.textContent='첫 번째 추첨을 시작해요';spinLabel.textContent='돌림판 돌리기';note.textContent='미리보기 기록이 모두 초기화됐어요.';dlg.close()});
+copyBtn.addEventListener('click',async()=>{if(!isLive)return;const url=location.origin+location.pathname;try{await navigator.clipboard.writeText(url);copyBtn.textContent='관람 링크 복사 완료 ✓'}catch{prompt('링크를 복사하세요',url)}});
+})();
+</script>
+</body>
+</html>
